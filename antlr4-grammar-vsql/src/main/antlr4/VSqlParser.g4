@@ -153,7 +153,30 @@ statement
 		| start_transaction_statement
 		| truncate_table_statement
 		| update_statement
-	) SEMI
+	) SEMI?
+;
+
+dml_statement
+:
+	select_statement
+	| insert_statement
+	| update_statement
+;
+
+ddl_statement
+:
+;
+
+dcl_statement
+:
+;
+
+tcl_statement
+:
+;
+
+other_statement
+:
 ;
 
 alter_access_policy_statement
@@ -165,9 +188,9 @@ alter_access_policy_statement
 	(
 		K_FOR K_COLUMN
 		(
-			columnname expression?
+			columnname w_expressions?
 		)
-		| K_FOR K_ROWS K_WHERE expression
+		| K_FOR K_ROWS K_WHERE w_expressions
 	)
 	(
 		K_ENABLE
@@ -251,7 +274,7 @@ alter_database_drop_statement
 			K_CLEAR
 			(
 				K_PARAMETER
-			)? parameters
+			)? names
 		)
 	)
 ;
@@ -388,7 +411,7 @@ alter_node_statement
 		| K_CLEAR
 		(
 			K_PARAMETER
-		)? parameters
+		)? names
 	)
 ;
 
@@ -1096,34 +1119,420 @@ savepoint_statement
 
 select_clause
 :
-	K_SELECT
+	K_SELECT hints?
 	(
 		K_ALL
 		| K_DISTINCT
-	)? columns
+	)? elements
 ;
 
-columns
+select_query
 :
-	columnname
+	select_clause into_clause? from_clause? where_clause? timeseries_clause?
+	groupBy_clause? having_clause? match_clause?
 	(
-		K_AS WORD
+		K_UNION
+		(
+			K_ALL
+			| K_DISTINCT
+		)?
+	)? except_clause? intersect_clause? orderby_clause?
+	(
+		K_LIMIT
+		(
+			DECIMAL
+			| K_ALL
+		)
 	)?
 	(
-		COMMA columnname
+		K_OFFSET DECIMAL
+	)
+	(
+		K_FOR K_UPDATE
 		(
-			K_AS WORD
+			K_OF tableReference
+			(
+				COMMA tableReference
+			)*
 		)?
+	)?
+;
+
+intersect_clause
+:
+	K_INTERSECT select_query
+;
+
+except_clause
+:
+	K_EXCEPT select_query
+;
+
+elements
+:
+	element
+	(
+		COMMA element
 	)*
+;
+
+element
+:
+	(
+		exp
+		| OPEN_PAREN select_query CLOSE_PAREN
+	) alias?
+;
+
+hints
+:
+	OPEN_HINT hint
+	(
+		COMMA hint
+	)* CLOSE_HINT
+;
+
+hint
+:
+	gbHint
+;
+
+gbHint
+:
+	K_GBYTYPE
+	(
+		K_HASH
+		| K_PIPE
+	)
+;
+
+expressions
+:
+	exp
+	(
+		COMMA exp
+	)*
+;
+
+exp
+:
+	OPEN_PAREN?
+	(
+		columnReference
+		| func_call
+		| caseExp
+	) CLOSE_PAREN?
+;
+
+predicates
+:
+	betweenPredicate
+	| booleanPredicate
+	| columnValuePredicate
+	| inPredicate
+	| interpolatePredicate
+	| likePredicate
+	| nullPredicate
+;
+
+nullPredicate
+:
+	(
+		columnReference
+		| func_call
+	) K_IS
+	(
+		K_NOT
+	)? K_NULL
+;
+
+likePredicate
+:
+	columnReference K_NOT?
+	(
+		K_LIKE
+		| K_ILIKE
+		| K_LIKEB
+		| K_ILIKEB
+	) STRING
+	(
+		K_ESCAPE SINGLE_QUOTE
+	)
+;
+
+joinPredicate
+:
+	K_ON columnReference comparisonOperator columnReference
+	(
+		(
+			K_AND
+			| K_OR
+			| K_NOT
+		) columnReference comparisonOperator columnReference
+	)*
+;
+
+interpolatePredicate
+:
+	columnReference K_PREVIOUS K_VALUE columnReference
+;
+
+columnValuePredicate
+:
+	columnReference comparisonOperator
+	(
+		columnReference
+		| constantExp
+	)
+;
+
+inPredicate
+:
+	columnReference
+	(
+		COMMA columnReference
+	)* K_IN K_NOT? inPredicateValues
+	(
+		COMMA inPredicateValues
+	)*
+;
+
+inPredicateValues
+:
+	OPEN_PAREN
+	(
+		constantExp
+		| inPredicateValues
+	) CLOSE_PAREN
+;
+
+constantExp
+:
+	DECIMAL
+	| STRING
+	|
+	(
+		K_IS K_NOT? K_NULL
+	)
+;
+
+betweenPredicate
+:
+	exp K_BETWEEN? exp K_AND exp
+;
+
+booleanPredicate
+:
+	exp K_IS K_NOT?
+	(
+		bool_expression
+		| K_UNKNOWN
+	)
+;
+
+caseExp
+:
+	K_CASE K_WHEN exp K_THEN result
+	(
+		K_WHEN exp K_THEN result
+	)*
+	(
+		K_ELSE result
+	)? K_END
+;
+
+result
+:
+	any
+;
+
+condition
+:
+	exp
+	| predicates
+;
+
+columnReference
+:
+	(
+		(
+			(
+				(
+					dbname DOT
+				)?
+				(
+					schema DOT
+				)
+			)?
+			(
+				tablename DOT
+			)
+		)
+	)? columnname
+;
+
+alias
+:
+	(
+		K_AS? any
+	)
+;
+
+func_call
+:
+	funcName OPEN_PAREN
+	(
+		STAR
+		|
+		(
+			(
+				K_ALL
+				| K_DISTINCT
+			)? exp_args
+		)
+	)? CLOSE_PAREN
+;
+
+exp_args
+:
+	(
+		(
+			OPEN_PAREN exp_args CLOSE_PAREN
+		)
+		| any
+	)
+	(
+		COMMA
+		(
+			(
+				OPEN_PAREN exp_args CLOSE_PAREN
+			)
+			| any
+		)
+	)*
+;
+
+funcName
+:
+	aggregateFunction
+	| WORD
+;
+
+aggregateFunction
+:
+	K_ROLLUP
+	|
+	(
+		K_GROUPING K_SETS?
+	)
+	| K_APPROXIMATE_COUNT_DISTINCT
+	| K_APPROXIMATE_COUNT_DISTINCT_SYNOPSIS
+	| K_APPROXIMATE_COUNT_DISTINCT_OF_SYNOPSIS
+	| K_APPROXIMATE_MEDIAN
+	| K_APPROXIMATE_PERCENTILE
+	| K_AVG
+	| K_BIT_AND
+	| K_BIT_OR
+	| K_BIT_XOR
+	| K_BOOL_AND
+	| K_BOOL_OR
+	| K_BOOL_XOR
+	| K_CORR
+	| K_COUNT
+	| K_COVAR_POP
+	| K_COVAR_SAMP
+	| K_GROUP_ID
+	| K_GROUPING
+	| K_GROUPING_ID
+	| K_LISTAGG
+	| K_MAX
+	| K_MIN
+	| K_REGR_AVGX
+	| K_REGR_AVGY
+	| K_REGR_COUNT
+	| K_REGR_INTERCEPT
+	| K_REGR_R2
+	| K_REGR_SLOPE
+	| K_REGR_SXX
+	| K_REGR_SXY
+	| K_REGR_SYY
+	| K_STDDEV
+	| K_STDDEV_POP
+	| K_STDDEV_SAMP
+	| K_SUM
+	| K_SUM_FLOAT
+	| K_VAR_POP
+	| K_VAR_SAMP
+	| K_VARIANCE
+;
+
+any
+:
+	K_INT
+	| WORD
+	| STRING
+	| SINGLE_QUOTE
+	| STAR
+	| DECIMAL
 ;
 
 from_clause
 :
 	K_FROM
 	(
-		tablename
+		dataset
+		(
+			COMMA? dataset
+		)*
+	) tableSample?
+;
+
+tableSample
+:
+	K_TABLESAMPLE OPEN_PAREN FLOAT CLOSE_PAREN
+;
+
+dataset
+:
+	(
+		tableReference
 		| select_clause
-	)
+		| joinedTable
+	) alias?
+;
+
+tableReference
+:
+	(
+		(
+			dbname DOT
+		)?
+		(
+			schema DOT
+		)
+	)? tablename
+;
+
+joinedTable
+:
+	tableReference
+	(
+		K_INNER
+		|
+		(
+			K_LEFT K_OUTER?
+		)
+		|
+		(
+			K_RIGHT K_OUTER?
+		)
+		|
+		(
+			K_FULL K_OUTER?
+		)
+		| K_NATURAL
+		| K_CROSS
+	)? K_JOIN tableSample? joinPredicate?
 ;
 
 into_clause
@@ -1131,14 +1540,13 @@ into_clause
 	(
 		K_INTO K_TABLE?
 		(
-			dbname DOT
-		)?
-		(
-			schema DOT
-		)? tablename
-		(
-			K_AS WORD
-		)?
+			(
+				dbname DOT
+			)?
+			(
+				schema DOT
+			)
+		)? tablename alias?
 	)
 	| K_INTO
 	(
@@ -1150,10 +1558,12 @@ into_clause
 		| K_TEMPORARY
 	) K_TABLE?
 	(
-		dbname DOT
-	)?
-	(
-		schema DOT
+		(
+			dbname DOT
+		)?
+		(
+			schema DOT
+		)
 	)? tablename
 	(
 		K_ON K_COMMIT
@@ -1166,17 +1576,85 @@ into_clause
 
 timeseries_clause
 :
-	todo_statement
+	K_TIMESERIES columnReference K_AS SINGLE_QUOTE over_clause K_ORDER K_BY
+	columnReference
+	(
+		COMMA columnReference
+	)*
+;
+
+over_clause
+:
+	K_OVER OPEN_PAREN
+	(
+		K_PARTITION K_BY columnReference
+		(
+			COMMA columnReference
+		)*
+	)? K_ORDER K_BY columnReference CLOSE_PAREN
 ;
 
 groupBy_clause
 :
-	K_GROUP K_BY HINT? g_expressions
+	K_GROUP K_BY hints? expressions
 ;
 
 having_clause
 :
-	K_HAVING w_expressions
+	K_HAVING condition
+	(
+		COMMA condition
+	)*
+;
+
+match_clause
+:
+	K_MATCH OPEN_PAREN
+	(
+		K_PARTITION K_BY columnReference
+		(
+			COMMA columnReference
+		)*
+	)? K_ORDER K_BY columnReference
+	(
+		COMMA columnReference
+	)* K_DEFINE
+	(
+		any K_AS
+		(
+			exp
+			| w_expressions
+		)
+	)
+	(
+		COMMA
+		(
+			any K_AS
+			(
+				exp
+				| w_expressions
+			)
+		)
+	)* K_PATTERN any K_AS OPEN_PAREN regex CLOSE_PAREN
+	(
+		(
+			K_ROWS K_MATCH
+		)
+		(
+			(
+				K_ALL K_EVENTS
+			)
+			|
+			(
+				K_FIRST K_EVENT
+			)
+		)
+	)? CLOSE_PAREN
+;
+
+regex
+:
+	any
 ;
 
 where_clause
@@ -1184,14 +1662,36 @@ where_clause
 	K_WHERE w_expressions
 ;
 
+orderby_clause
+:
+	K_ORDER K_BY orderbyItems
+;
+
+orderbyItems
+:
+	orderbyItem
+	(
+		COMMA orderbyItem
+	)*
+;
+
+orderbyItem
+:
+	exp
+	(
+		K_ASC
+		| K_DESC
+	)?
+;
+
 w_expressions
 :
-	expression
+	predicates
 	(
 		(
 			K_AND
 			| K_OR
-		) expression
+		) predicates
 	)*
 ;
 
@@ -1217,8 +1717,7 @@ select_statement
 		(
 			K_AT K_TIME STRING
 		)
-	)? HINT? select_clause into_clause? from_clause? where_clause? timeseries_clause?
-	groupBy_clause? having_clause?
+	)? select_query
 ;
 
 set_datestyle_statement
@@ -1404,7 +1903,7 @@ show_statement
 	K_SHOW
 	(
 		K_ALL
-		| parameter
+		| name
 	)
 ;
 
@@ -1413,7 +1912,7 @@ show_current_statement
 	K_SHOW K_CURRENT
 	(
 		K_ALL
-		| parameter
+		| name
 	)
 ;
 
@@ -1422,7 +1921,7 @@ show_database_statement
 	K_SHOW K_DATABASE dbname
 	(
 		K_ALL
-		| parameters
+		| names
 	)
 ;
 
@@ -1431,7 +1930,7 @@ show_node_statement
 	K_SHOW K_NODE name
 	(
 		K_ALL
-		| parameters
+		| names
 	)
 ;
 
@@ -1444,7 +1943,7 @@ show_session_statement
 		(
 			K_UDPARAMETERS K_ALL
 		)
-		| parameters
+		| names
 	)
 ;
 
@@ -1558,16 +2057,15 @@ arg
 :
 	K_INT
 	| WORD
+	| STRING
+	| SINGLE_QUOTE
+	| STAR
+	| DECIMAL
 ;
 
 auth_method_name
 :
 	WORD
-;
-
-alias
-:
-	K_AS name
 ;
 
 host_ip_address
@@ -1586,20 +2084,7 @@ keyValuePairs
 
 keyValuePair
 :
-	name EQUAL value
-;
-
-parameters
-:
-	parameter
-	(
-		COMMA parameter
-	)*
-;
-
-parameter
-:
-	WORD
+	name operator any
 ;
 
 value
@@ -1622,6 +2107,8 @@ name
 :
 	K_HOSTNAME
 	| WORD
+	| STRING
+	| SINGLE_QUOTE
 ;
 
 newNames
@@ -1638,28 +2125,22 @@ newName
 	| WORD
 ;
 
-expression
-:
-	name operator value
-;
-
 operator
 :
-	(
-		EQUAL
-		| EQUAL_GT
-		| GT
-	)
+	comparisonOperator
 ;
 
-string
+comparisonOperator
 :
-	STRING
-;
-
-number
-:
-	DECIMAL
+	EQUAL
+	| EQUAL_GT
+	| GT
+	| LT
+	| LTE
+	| GTE
+	| LT_GT
+	| BANG_EQUAL
+	| EQUAL2
 ;
 
 dbname
@@ -1698,6 +2179,8 @@ schema
 columnname
 :
 	WORD
+	| STRING
+	| DECIMAL
 ;
 
 sequence

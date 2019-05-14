@@ -2,6 +2,7 @@ package org.antlr.vsql;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
@@ -20,10 +21,21 @@ import org.junit.Test;
 public class MainTest {
 
     @Test
-    @Ignore
+   // @Ignore
     public void test() {
         VSqlLexer lexer = new VSqlLexer(CharStreams.fromString(
-                "seLect  a, b, c  FROM test.table WHERE a > 0;"));
+                "SELECT uidddd\r\n" + 
+                
+                "FROM clickstream_log\r\n" + 
+                "MATCH\r\n" + 
+                "  (PARTITION BY uid, sid ORDER BY ts\r\n" + 
+                "   DEFINE\r\n" + 
+                "     Entry    AS RefURL  NOT ILIKE 'hhh'," + 
+                "     Onsite   AS PageURL ILIKE     's'" + 
+
+                "   PATTERN\r\n" + 
+                "     P AS (EntryOnsitePurchase)\r\n" + 
+                "   ROWS MATCH FIRST EVENT);"));
         CommonTokenStream stream = new CommonTokenStream(lexer);
         VSqlParser parser = new VSqlParser(stream);
         parser.addErrorListener(new BaseErrorListener() {
@@ -40,15 +52,18 @@ public class MainTest {
     @Test
     public void testExamples() throws IOException {
         for (File f : new File("./examples").listFiles()) {
-
+        	if (f.getName().contains("_skip")) {
+        		continue;
+        	}
             VSqlLexer lexer = new VSqlLexer(CharStreams.fromPath(f.toPath()));
             CommonTokenStream stream = new CommonTokenStream(lexer);
             VSqlParser parser = new VSqlParser(stream);
+            
             parser.addErrorListener(new BaseErrorListener() {
                 @Override
                 public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
                         int charPositionInLine, String msg, RecognitionException e) throws RecognitionException {
-                    System.out.println("ERROR " + msg);
+                    System.out.println("ERROR " + msg+" "+line);
                 }
             });
             ParseTree root = parser.root();
