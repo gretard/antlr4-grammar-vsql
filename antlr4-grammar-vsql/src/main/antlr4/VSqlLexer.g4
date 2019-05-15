@@ -3117,6 +3117,38 @@ K_UNITS
 :
 	U N I T S
 ;
+K_DATESTYLE:
+
+D A T E S T Y L E;
+K_ISO:
+I S O;
+K_MDY:
+M D Y;
+K_POSTGRES:
+P O S T G R E S
+;
+K_SQL:
+S Q L;
+K_GERMAN:
+G E R M A N;
+K_DMY :
+D M Y;
+K_TLSMODE:
+T L S M O D E;
+ K_PREFER: P R E F E R;
+K_INT8:
+I N T '8'
+;
+K_FLOAT8:
+F L O A T '8'
+;
+K_GEOMETRY:
+G E O M E T R Y;
+
+K_GEOGRAPHY:
+G E O G R A P H Y;
+K_DATE:
+D A T E;
 // symbols
 
 COMMA
