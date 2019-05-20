@@ -335,7 +335,45 @@ alter_table_general_statment:
 alter_table_item:
 	(K_ADD K_COLUMN ( K_IF K_NOT K_EXISTS)? column dataTypes);
 
-alter_user_statement: todo_statement;
+alter_user_statement:
+	K_ALTER K_USER identifier (
+		(
+			(
+				K_DEFAULT K_ROLE (
+					K_NONE
+					| entities
+					| K_ALL
+					| (K_ALL K_EXCEPT entities)
+				)
+			)
+			| (K_RENAME K_TO string)
+		)
+		| (
+			(K_ACCOUNT (K_LOCK | K_UNLOCK))
+			| (K_GRACEPERIOD (K_NONE | interval))
+			| (K_IDENTIFIED K_BY string (K_REPLACE string)?)
+			| (K_IDLESESSIONTIMEOUT (K_NONE | interval))
+			| (
+				K_MAXCONNECTIONS (
+					K_NONE
+					| (number K_ON (K_DATABASE | K_NODE))
+				)
+			)
+			| (K_MEMORYCAP (K_NONE | string))
+			| (K_PASSWORD K_EXPIRE)
+			| (K_PROFILE (K_DEFAULT | string))
+			| (K_RESOURCE K_POOL string)
+			| (K_RUNTIMECAP (K_NONE | string))
+			| (
+				K_SEARCH_PATH (
+					K_DEFAULT
+					| (schema (COMMA schema)*)
+				)
+			)
+			| (K_SECURITY_ALGORITHM string)
+			| (K_TEMPSPACECAP (K_NONE | interval))
+		)+
+	);
 
 alter_view_statement:
 	K_ALTER K_VIEW (schemaReference DOT)? (
@@ -352,13 +390,47 @@ todo_statement: identifier+;
 begin_transaction_statement:
 	K_BEGIN (K_WORK | K_TRANSACTION) K_ISOLATION K_LEVEL isolationLevel transactionMode;
 
-comment_on_statement: comment_on_column_statement;
+comment_on_statement:
+	comment_on_column_statement
+	| comment_on_constraint_statement
+	| comment_on_function_statement
+	| comment_on_transform_function_statement
+	| comment_on_library_statement
+	| comment_on_node_statement
+	| comment_on_schema_statement
+	| comment_on_sequence_statement
+	| comment_on_table_statement
+	| comment_on_view_statement
+	| comment_on_projection_statement;
 
 comment_on_column_statement:
-	K_COMMENT K_ON K_COLUMN (dbname DOT)? (schema DOT)? projection DOT column K_IS (
-		identifier
-		| K_NULL
-	);
+	K_COMMENT K_ON K_COLUMN projectionReference DOT column comment_value;
+comment_on_constraint_statement:
+	K_COMMENT K_ON K_CONSTRAINT identifier K_ON tableReference comment_value;
+comment_on_function_statement:
+	K_COMMENT K_ON K_FUNCTION functionReference arglist comment_value;
+comment_on_transform_function_statement:
+	K_COMMENT K_ON K_TRANSFORM K_FUNCTION functionReference OPEN_PAREN (
+		identifier dataTypes (COMMA identifier dataTypes)*
+	)? CLOSE_PAREN comment_value;
+comment_on_library_statement:
+	K_COMMENT K_ON K_FUNCTION libraryReference comment_value;
+
+comment_on_node_statement:
+	K_COMMENT K_ON K_NODE node comment_value;
+comment_on_schema_statement:
+	K_COMMENT K_ON K_SCHEMA schema comment_value;
+comment_on_sequence_statement:
+	K_COMMENT K_ON K_SEQUENCE sequenceReference comment_value;
+comment_on_table_statement:
+	K_COMMENT K_ON K_TABLE tableReference comment_value;
+comment_on_view_statement:
+	K_COMMENT K_ON K_VIEW tableReference comment_value;
+
+comment_on_projection_statement:
+	K_COMMENT K_ON K_PROJECTION projectionReference comment_value;
+
+comment_value: K_IS ( identifier | K_NULL);
 
 commit_statement: K_COMMIT ( K_WORK | K_TRANSACTION)?;
 
@@ -383,13 +455,23 @@ create_access_policy_statement:
 		| ( K_FOR K_ROWS K_WHERE expressions)
 	) (K_ENABLE | K_DISABLE);
 
-create_authentication_statement: todo_statement;
+create_authentication_statement:
+	K_CREATE K_AUTHENTICATION identifier K_METHOD identifier (
+		(K_LOCAL)
+		| (
+			K_HOST (K_TLS | (K_NO K_TLS))? (
+				IPV4_ADDR
+				| IPV6_ADDR
+			)
+		)
+	);
 
 create_branch_statement: todo_statement;
 
 create_external_table_as_copy_statement: todo_statement;
 
-create_fault_group_statement: todo_statement;
+create_fault_group_statement:
+	K_CREATE K_FAULT K_GROUP identifier;
 
 create_flex_table_statement: todo_statement;
 
@@ -397,15 +479,24 @@ create_flex_external_table_as_copy_statement: todo_statement;
 
 create_function_statements_statement: todo_statement;
 
-create_hcatalog_schema_statement: todo_statement;
+create_hcatalog_schema_statement:
+	K_CREATE K_HCATALOG K_SCHEMA (K_IF K_NOT K_EXISTS)? schema (
+		K_AUTHORIZATION identifier
+	)? (K_WITH keyValuePair+)?;
 
-create_library_statement: todo_statement;
+create_library_statement:
+	K_CREATE (K_OR K_REPLACE)? K_LIBRARY libraryReference K_AS string (
+		K_DEPENDS string
+	)? (K_LANGUAGE string)?;
 
 create_load_balance_group_statement: todo_statement;
 
 create_local_temporary_view_statement: todo_statement;
 
-create_location_statement: todo_statement;
+create_location_statement:
+	K_CREATE K_LOCATION string ((K_NODE node) | (K_ALL K_NODES))? K_SHARED? (
+		K_USAGE string
+	)? (K_LABEL string)? (K_LIMIT string)?;
 
 create_network_address_statement: todo_statement;
 
@@ -430,11 +521,26 @@ create_role_statement: todo_statement;
 
 create_routing_rule_statement: todo_statement;
 
-create_schema_statement: todo_statement;
+create_schema_statement:
+	K_CREATE K_SCHEMA (K_IF K_NOT K_EXISTS)? schemaReference (
+		K_AUTHORIZATION string
+	)? (K_DEFAULT ( K_INCLUDE | K_EXCLUDE) K_SCHEMA? K_PRIVILEGES)?;
 
-create_sequence_statement: todo_statement;
+create_sequence_statement:
+	K_CREATE K_SEQUENCE (
+		(K_IF K_NOT K_EXISTS)? sequenceReference (
+			K_INCREMENT K_BY DECIMAL
+		)? (( K_MINVALUE DECIMAL) | ( K_NO K_MINVALUE))? (
+			( K_MAXVALUE DECIMAL)
+			| ( K_NO K_MAXVALUE)
+		)? (K_RESTART K_WITH DECIMAL)? (
+			( K_CACHE DECIMAL)
+			| ( K_NO K_CACHE) ( K_CYCLE | K_NO K_CYCLE)
+		)?
+	);
 
-create_subnet_statement: todo_statement;
+create_subnet_statement:
+	K_CREATE K_SUBNET identifier K_WITH string;
 
 create_table_statement: todo_statement;
 
@@ -811,9 +917,7 @@ joinedTable:
 
 elements: element ( COMMA element)*;
 
-element:
-	( expression   alias?)
-	| asteriskExp;
+element: ( expression alias?) | asteriskExp;
 
 expressions: condition ( COMMA condition)*;
 
@@ -827,7 +931,15 @@ expression:
 			| select_query
 		) CLOSE_PAREN
 	)
-	| (( number | functionCall | columnReference | caseExp | select_query));
+	| (
+		(
+			number
+			| functionCall
+			| columnReference
+			| caseExp
+			| select_query
+		)
+	);
 
 predicate:
 	betweenPredicate
@@ -870,14 +982,16 @@ inPredicateValues:
 
 constantExp: number | string ( K_IS K_NOT? K_NULL);
 
-betweenPredicate: expression K_BETWEEN? expression K_AND expression;
+betweenPredicate:
+	expression K_BETWEEN? expression K_AND expression;
 
-booleanPredicate: expression K_IS K_NOT? ( bool_expression | K_UNKNOWN);
+booleanPredicate:
+	expression K_IS K_NOT? (bool_expression | K_UNKNOWN);
 
 caseExp:
-	K_CASE K_WHEN expression K_THEN expression (K_WHEN expression K_THEN expression)* (
-		K_ELSE expression
-	)? K_END;
+	K_CASE K_WHEN expression K_THEN expression (
+		K_WHEN expression K_THEN expression
+	)* (K_ELSE expression)? K_END;
 
 condition: expression | predicate;
 
@@ -934,6 +1048,8 @@ tableReference: ( ( dbname DOT)? ( schema DOT))? table;
 projectionReference:
 	(( ( dbname DOT)? ( schema DOT))? table DOT)? projection;
 functionReference: ( ( dbname DOT)? ( schema DOT))? function;
+libraryReference: ( ( dbname DOT)? ( schema DOT))? library;
+sequenceReference: ( ( dbname DOT)? ( schema DOT))? sequence;
 
 schemaReference: ( dbname DOT)? schema;
 
@@ -943,10 +1059,12 @@ schema: identifier;
 table: identifier;
 
 projection: identifier;
-
+library: identifier;
 function: identifier | aggregateFunction;
-
+node: identifier;
+sequence: identifier;
 column: identifier;
+interval: string;
 entities: identifier ( COMMA identifier)*;
 string: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
 
