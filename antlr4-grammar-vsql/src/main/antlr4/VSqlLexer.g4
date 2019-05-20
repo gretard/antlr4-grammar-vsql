@@ -1482,7 +1482,6 @@ LINE_COMMENT_LITERAL: '--' ~[\r\n]* -> channel ( HIDDEN );
 
 DOUBLE_QUOTE_STRING: '"' ~'"'* '"';
 
-
 OPEN_HINT: '/*+';
 CLOSE_HINT: '*/';
 
@@ -1504,11 +1503,8 @@ K_VERBATIM: V E R B A T I M;
 K_PIPE: P I P E;
 K_HASH: H A S H;
 
-
-
 WORD:
 	[\p{Alpha}\p{General_Category=Other_Letter}] [\p{Alnum}\p{General_Category=Other_Letter}_]*;
-
 
 SINGLE_QUOTE_STRING: '\'' ( ~'\'' | '\'\'')* '\'';
 
