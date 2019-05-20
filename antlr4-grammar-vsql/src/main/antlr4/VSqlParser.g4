@@ -785,13 +785,13 @@ match_clause:
 	K_MATCH OPEN_PAREN (
 		K_PARTITION K_BY columnReference (COMMA columnReference)*
 	)? K_ORDER K_BY columnReference (COMMA columnReference)* K_DEFINE (
-		identifier K_AS ( exp | predicates)
-	) (COMMA ( identifier K_AS ( exp | predicates)))* K_PATTERN identifier K_AS OPEN_PAREN
+		identifier K_AS ( expression | predicates)
+	) (COMMA ( identifier K_AS ( expression | predicates)))* K_PATTERN identifier K_AS OPEN_PAREN
 		identifier CLOSE_PAREN (
 		(K_ROWS K_MATCH) (( K_ALL K_EVENTS) | ( K_FIRST K_EVENT))
 	)? CLOSE_PAREN;
 
-orderbyItem: exp ( K_ASC | K_DESC)?;
+orderbyItem: expression ( K_ASC | K_DESC)?;
 
 predicates: predicate ( ( K_AND | K_OR) predicate)*;
 
@@ -812,21 +812,22 @@ joinedTable:
 elements: element ( COMMA element)*;
 
 element:
-	(( exp | OPEN_PAREN select_query CLOSE_PAREN) alias?)
+	( expression   alias?)
 	| asteriskExp;
 
 expressions: condition ( COMMA condition)*;
 
-exp:
+expression:
 	(
 		OPEN_PAREN (
 			number
 			| functionCall
 			| columnReference
 			| caseExp
+			| select_query
 		) CLOSE_PAREN
 	)
-	| (( number | functionCall | columnReference | caseExp));
+	| (( number | functionCall | columnReference | caseExp | select_query));
 
 predicate:
 	betweenPredicate
@@ -869,16 +870,16 @@ inPredicateValues:
 
 constantExp: number | string ( K_IS K_NOT? K_NULL);
 
-betweenPredicate: exp K_BETWEEN? exp K_AND exp;
+betweenPredicate: expression K_BETWEEN? expression K_AND expression;
 
-booleanPredicate: exp K_IS K_NOT? ( bool_expression | K_UNKNOWN);
+booleanPredicate: expression K_IS K_NOT? ( bool_expression | K_UNKNOWN);
 
 caseExp:
-	K_CASE K_WHEN exp K_THEN exp (K_WHEN exp K_THEN exp)* (
-		K_ELSE exp
+	K_CASE K_WHEN expression K_THEN expression (K_WHEN expression K_THEN expression)* (
+		K_ELSE expression
 	)? K_END;
 
-condition: exp | predicate;
+condition: expression | predicate;
 
 alias: ( K_AS? identifier);
 
