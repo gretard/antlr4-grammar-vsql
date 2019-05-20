@@ -94,9 +94,9 @@ statement
 		| drop_branch_statement
 		| drop_fault_group_statement
 		| drop_function_statement
-		|drop_source_statement
-|drop_filter_statement
-|drop_parser_statement
+		| drop_source_statement
+		| drop_filter_statement
+		| drop_parser_statement
 		| drop_model_statement
 		| drop_library_statement
 		| drop_load_balance_group_statement
@@ -223,7 +223,7 @@ alter_access_policy_statement
 
 alter_authentication_statement
 :
-	K_ALTER K_AUTHENTICATION entity
+	K_ALTER K_AUTHENTICATION identifier
 	(
 		(
 			K_ENABLE
@@ -238,16 +238,17 @@ alter_authentication_statement
 				(
 					K_TLS
 					| K_NO K_TLS
-				) host_ip_address
+				) (IPV4_ADDR
+	| IPV6_ADDR)
 			)
 		)
 		|
 		(
-			K_RENAME K_TO item
+			K_RENAME K_TO identifier
 		)
 		|
 		(
-			K_METHOD item
+			K_METHOD identifier
 		)
 		|
 		(
@@ -255,7 +256,7 @@ alter_authentication_statement
 		)
 		|
 		(
-			K_PRIORITY item //int
+			K_PRIORITY identifier //int
 
 		)
 	)
@@ -272,7 +273,7 @@ alter_database_drop_statement
 		(
 			K_EXPORT K_ON
 			(
-				item
+				identifier
 				| K_DEFAULT
 			)
 		)
@@ -292,33 +293,33 @@ alter_database_drop_statement
 			K_CLEAR
 			(
 				K_PARAMETER
-			)? items
+			)? entities
 		)
 	)
 ;
 
 alter_fault_group_statement
 :
-	K_ALTER K_FAULT K_GROUP entity
+	K_ALTER K_FAULT K_GROUP identifier
 	(
 		(
-			K_ADD K_NODE item
+			K_ADD K_NODE identifier
 		)
 		|
 		(
-			K_DROP K_NODE item
+			K_DROP K_NODE identifier
 		)
 		|
 		(
-			K_ADD K_FAULT K_GROUP item
+			K_ADD K_FAULT K_GROUP identifier
 		)
 		|
 		(
-			K_DROP K_FAULT K_GROUP item
+			K_DROP K_FAULT K_GROUP identifier
 		)
 		|
 		(
-			K_RENAME K_TO item
+			K_RENAME K_TO identifier
 		)
 	)
 ;
@@ -326,20 +327,18 @@ alter_fault_group_statement
 alter_function_statement
 :
 	K_ALTER K_FUNCTION
-	(
-		schemaReference DOT
-	)? funcName arglist? CLOSE_PAREN
+	functionReference arglist? CLOSE_PAREN
 	(
 		(
-			K_OWNER K_TO item
+			K_OWNER K_TO identifier
 		)
 		|
 		(
-			K_RENAME K_TO item
+			K_RENAME K_TO identifier
 		)
 		|
 		(
-			K_SET K_SCHEMA item
+			K_SET K_SCHEMA identifier
 		)
 		|
 		(
@@ -358,13 +357,13 @@ alter_library_statement
 	K_ALTER K_LIBRARY
 	(
 		schemaReference DOT
-	)? entity
+	)? identifier
 	(
-		K_DEPENDS item
+		K_DEPENDS identifier
 		(
-			K_LANGUAGE item
+			K_LANGUAGE identifier
 		)?
-	)? K_AS item
+	)? K_AS identifier
 ;
 
 alter_model_statement
@@ -372,45 +371,45 @@ alter_model_statement
 	K_ALTER K_MODEL
 	(
 		schemaReference DOT
-	)? entity
+	)? identifier
 	(
 		(
-			K_OWNER K_TO item
+			K_OWNER K_TO identifier
 		)
 		|
 		(
-			K_RENAME K_TO item
+			K_RENAME K_TO identifier
 		)
 		|
 		(
-			K_SET K_SCHEMA item
+			K_SET K_SCHEMA identifier
 		)
 	)
 ;
 
 alter_network_interface_statement
 :
-	K_ALTER K_NETWORK K_INTERFACE entity K_RENAME K_TO item
+	K_ALTER K_NETWORK K_INTERFACE identifier K_RENAME K_TO identifier
 ;
 
 alter_node_statement
 :
-	K_ALTER K_NODE entity
+	K_ALTER K_NODE identifier
 	(
 		(
 			K_EXPORT K_ON
 			(
-				item
+				identifier
 				| K_DEFAULT
 			)
 		)
 		|
 		(
 			K_IS
-		) item
+		) identifier
 		| K_REPLACE
 		(
-			K_WITH item
+			K_WITH identifier
 		)
 		| K_RESET
 		| K_SET
@@ -420,13 +419,13 @@ alter_node_statement
 		| K_CLEAR
 		(
 			K_PARAMETER
-		)? items
+		)? entities
 	)
 ;
 
 alter_notfifier_statement
 :
-	K_ALTER K_NOTIFIER name notifierParam
+	K_ALTER K_NOTIFIER identifier notifierParam
 	(
 		COMMA notifierParam
 	)*
@@ -437,30 +436,30 @@ alter_projection_statement
 	K_ALTER K_PROJECTION
 	(
 		schemaReference DOT
-	)? entity K_RENAME K_TO item
+	)? identifier K_RENAME K_TO identifier
 ;
 
 alter_profile_statement
 :
 	K_ALTER K_PROFILE
 	(
-		entity
-	) K_LIMIT password_parameter item
+		identifier
+	) K_LIMIT password_parameter identifier
 ;
 
 alter_profile_rename_statement
 :
-	K_ALTER K_PROFILE entity K_RENAME K_TO item
+	K_ALTER K_PROFILE identifier K_RENAME K_TO identifier
 ;
 
 alter_resource_pool_statement
 :
-	K_ALTER K_RESOURCE K_POOL entity item
+	K_ALTER K_RESOURCE K_POOL identifier identifier
 ;
 
 alter_role_rename_statement
 :
-	K_ALTER K_ROLE entity K_RENAME K_TO item
+	K_ALTER K_ROLE identifier K_RENAME K_TO identifier
 ;
 
 alter_schema_statement
@@ -479,7 +478,7 @@ alter_schema_statement
 				)
 				|
 				(
-					K_OWNER K_TO item
+					K_OWNER K_TO identifier
 					(
 						K_CASCADE
 					)?
@@ -493,7 +492,7 @@ alter_schema_statement
 				COMMA schema
 			)*
 			(
-				K_RENAME K_TO items
+				K_RENAME K_TO entities
 			)
 		)
 	)
@@ -506,7 +505,7 @@ alter_sequence_statement
 		(
 			(
 				schemaReference DOT
-			)? entity
+			)? identifier
 			(
 				K_INCREMENT K_BY DECIMAL
 			)?
@@ -549,18 +548,18 @@ alter_sequence_statement
 		(
 			(
 				schemaReference DOT
-			)? entity
+			)? identifier
 			(
 				(
-					K_RENAME K_TO item
+					K_RENAME K_TO identifier
 				)
 				|
 				(
-					K_SET K_SCHEMA item
+					K_SET K_SCHEMA identifier
 				)
 				|
 				(
-					K_OWNER K_TO item
+					K_OWNER K_TO identifier
 				)
 			)
 		)
@@ -576,28 +575,28 @@ alter_session_statement
 		)
 		|
 		(
-			K_CLEAR K_PARAMETER? items?
+			K_CLEAR K_PARAMETER? entities?
 		)
 		|
 		(
 			K_SET K_UDPARAMETER
 			(
-				K_FOR libName
+				K_FOR identifier
 			)? keyValuePairs
 		)
 		|
 		(
 			K_CLEAR K_UDPARAMETER
 			(
-				K_FOR libName
-			)? items?
+				K_FOR identifier
+			)? entities?
 		)
 	)
 ;
 
 alter_subnet_statement
 :
-	K_ALTER K_SUBNET entity K_RENAME K_TO item
+	K_ALTER K_SUBNET identifier K_RENAME K_TO identifier
 ;
 
 alter_table_rename_statement
@@ -605,7 +604,7 @@ alter_table_rename_statement
 	K_ALTER K_TABLE tableReference
 	(
 		COMMA table
-	)* K_RENAME K_TO items
+	)* K_RENAME K_TO entities
 ;
 // todo
 
@@ -644,8 +643,8 @@ alter_view_statement
 	(
 		entities
 		(
-			K_OWNER K_TO item
-			| K_SET K_SCHEMA item
+			K_OWNER K_TO identifier
+			| K_SET K_SCHEMA identifier
 			|
 			(
 				K_INCLUDE
@@ -656,13 +655,13 @@ alter_view_statement
 				K_SCHEMA
 			)? K_PRIVILEGES
 		)
-		| K_RENAME K_TO items
+		| K_RENAME K_TO entities
 	)
 ;
 
 todo_statement
 :
-	WORD
+	identifier+
 ;
 
 begin_transaction_statement
@@ -689,7 +688,7 @@ comment_on_column_statement
 		schema DOT
 	)? projection DOT column K_IS
 	(
-		item
+		identifier
 		| K_NULL
 	)
 ;
@@ -705,7 +704,7 @@ commit_statement
 
 connect_statement
 :
-	K_CONNECT K_TO K_VERTICA dbname K_USER entity K_PASSWORD item K_ON item COMMA
+	K_CONNECT K_TO K_VERTICA dbname K_USER identifier K_PASSWORD identifier K_ON identifier COMMA
 	DECIMAL
 	(
 		K_TLSMODE K_PREFER
@@ -743,7 +742,7 @@ copy_from_vertica_statement
 		| K_TRICKLE
 	)?
 	(
-		K_STREAM K_NAME item
+		K_STREAM K_NAME identifier
 	)?
 	(
 		K_NO K_COMMIT
@@ -960,7 +959,7 @@ drop_authentication_statement
 	K_DROP K_AUTHENTICATION
 	(
 		K_IF K_EXISTS
-	)? entity
+	)? identifier
 	(
 		K_CASCADE
 	)?
@@ -976,7 +975,7 @@ drop_fault_group_statement
 	K_DROP K_FAULT K_GROUP
 	(
 		K_IF K_EXISTS
-	) faultgroup
+	) identifier
 ;
 
 drop_function_statement
@@ -992,7 +991,7 @@ drop_source_statement
 	K_DROP K_SOURCE
 	(
 		schemaReference DOT
-	)? entity OPEN_PAREN CLOSE_PAREN
+	)? identifier OPEN_PAREN CLOSE_PAREN
 ;
 
 drop_filter_statement
@@ -1000,7 +999,7 @@ drop_filter_statement
 	K_DROP K_FILTER
 	(
 		schemaReference DOT
-	)? entity OPEN_PAREN CLOSE_PAREN
+	)? identifier OPEN_PAREN CLOSE_PAREN
 ;
 
 drop_parser_statement
@@ -1008,7 +1007,7 @@ drop_parser_statement
 	K_DROP K_PARSER
 	(
 		schemaReference DOT
-	)? entity OPEN_PAREN CLOSE_PAREN
+	)? identifier OPEN_PAREN CLOSE_PAREN
 ;
 
 drop_model_statement
@@ -1019,9 +1018,9 @@ drop_model_statement
 	)?
 	(
 		schemaReference DOT
-	)? entity
+	)? identifier
 	(
-		COMMA entity
+		COMMA identifier
 	)*
 ;
 
@@ -1033,7 +1032,7 @@ drop_library_statement
 	)?
 	(
 		schemaReference DOT
-	)? entity K_CASCADE?
+	)? identifier K_CASCADE?
 ;
 
 drop_load_balance_group_statement
@@ -1054,7 +1053,7 @@ drop_network_interface_statement
 	)?
 	(
 		schemaReference DOT
-	)? entity K_CASCADE?
+	)? identifier K_CASCADE?
 ;
 
 drop_notifier_statement
@@ -1062,7 +1061,7 @@ drop_notifier_statement
 	K_NETWORK K_NOTIFIER
 	(
 		K_IF K_EXISTS
-	)? entity
+	)? identifier
 ;
 
 drop_procedure_statement
@@ -1073,7 +1072,7 @@ drop_procedure_statement
 	)?
 	(
 		schemaReference DOT
-	)? entity arglist
+	)? identifier arglist
 ;
 
 drop_profile_statement
@@ -1104,7 +1103,7 @@ drop_projection_statement
 
 drop_resource_pool_statement
 :
-	K_DROP K_RESOURCE K_POOL entity
+	K_DROP K_RESOURCE K_POOL identifier
 ;
 
 drop_role_statement
@@ -1176,7 +1175,7 @@ drop_text_index_statement
 	)?
 	(
 		schemaReference DOT
-	)? entity
+	)? identifier
 ;
 
 drop_transform_function_statement
@@ -1260,14 +1259,17 @@ export_to_vertica_statement
 	)
 ;
 //todo
+
 grant_statements_statement
 :
 	todo_statement
 ;
 
-grant_authentication_statement:
-K_GRANT K_AUTHENTICATION item K_TO entities 
+grant_authentication_statement
+:
+	K_GRANT K_AUTHENTICATION identifier K_TO entities
 ;
+
 insert_statement
 :
 	K_INSERT hints? K_INTO tableReference
@@ -1283,7 +1285,7 @@ insert_statement
 		)
 		|
 		(
-			K_VALUES OPEN_PAREN items CLOSE_PAREN
+			K_VALUES OPEN_PAREN entities CLOSE_PAREN
 		)
 		| select_statement
 	)
@@ -1306,10 +1308,10 @@ matchingClause
 			K_AND predicates
 		)? K_THEN K_UPDATE K_SET
 		(
-			column EQUAL item
+			column EQUAL identifier
 		)
 		(
-			column EQUAL item
+			column EQUAL identifier
 		)*
 		(
 			where_clause
@@ -1323,7 +1325,7 @@ matchingClause
 		)? K_THEN K_INSERT OPEN_PAREN column
 		(
 			COMMA column
-		)* CLOSE_PAREN K_VALUES OPEN_PAREN items CLOSE_PAREN
+		)* CLOSE_PAREN K_VALUES OPEN_PAREN entities CLOSE_PAREN
 	)
 ;
 
@@ -1334,7 +1336,10 @@ profile_statement
 
 release_savepoint_statement
 :
-	K_RELEASE (K_SAVEPOINT)? item
+	K_RELEASE
+	(
+		K_SAVEPOINT
+	)? identifier
 ;
 
 revoke_statements_statement
@@ -1344,17 +1349,24 @@ revoke_statements_statement
 
 rollback_statement
 :
-	K_ROLLBACK (K_WORK |K_TRANSACTION )?
+	K_ROLLBACK
+	(
+		K_WORK
+		| K_TRANSACTION
+	)?
 ;
 
 rollback_to_savepoint_statement
 :
-	K_ROLLBACK K_TO (K_SAVEPOINT )? item
+	K_ROLLBACK K_TO
+	(
+		K_SAVEPOINT
+	)? identifier
 ;
 
 savepoint_statement
 :
-	K_SAVEPOINT item
+	K_SAVEPOINT identifier
 ;
 
 select_statement
@@ -1369,14 +1381,40 @@ select_statement
 		)
 		|
 		(
-			K_AT K_TIME STRING
+			K_AT K_TIME string
 		)
 	)? select_query
 ;
 
 set_datestyle_statement
 :
-	K_SET K_DATESTYLE K_TO (K_ISO | K_GERMAN | (K_SQL (COMMA (K_DMY | K_MDY ))?) | ( K_POSTGRES (COMMA (K_MDY | K_DMY ))?))
+	K_SET K_DATESTYLE K_TO
+	(
+		K_ISO
+		| K_GERMAN
+		|
+		(
+			K_SQL
+			(
+				COMMA
+				(
+					K_DMY
+					| K_MDY
+				)
+			)?
+		)
+		|
+		(
+			K_POSTGRES
+			(
+				COMMA
+				(
+					K_MDY
+					| K_DMY
+				)
+			)?
+		)
+	)
 ;
 
 set_escape_string_warning_statement
@@ -1399,19 +1437,19 @@ set_intervalstyle_statement
 
 set_locale_statement
 :
-	K_SET K_LOCALE K_TO item
+	K_SET K_LOCALE K_TO identifier
 ;
 
 set_role_statement
 :
 	K_SET K_ROLE
 	(
-		names
+		entities
 		| K_NONE
 		| K_ALL
 		|
 		(
-			K_ALL K_EXCEPT names
+			K_ALL K_EXCEPT entities
 		)
 		| K_DEFAULT
 	)
@@ -1457,7 +1495,7 @@ set_session_graceperiod_statement
 :
 	K_SET K_SESSION K_GRACEPERIOD
 	(
-		item
+		identifier
 		| K_NONE
 		|
 		(
@@ -1470,7 +1508,7 @@ set_session_idlesessiontimeout_statement
 :
 	K_SET K_SESSION K_IDLESESSIONTIMEOUT
 	(
-		item
+		identifier
 		| K_NONE
 		|
 		(
@@ -1483,7 +1521,7 @@ set_session_memorycap_statement
 :
 	K_SET K_SESSION K_MEMORYCAP
 	(
-		item
+		identifier
 		| K_NONE
 		|
 		(
@@ -1505,7 +1543,7 @@ set_session_resource_pool_statement
 :
 	K_SET K_SESSION K_RESOURCE_POOL EQUAL
 	(
-		item
+		identifier
 		|
 		(
 			K_DEFAULT
@@ -1517,7 +1555,7 @@ set_session_runtimecap_statement
 :
 	K_SET K_SESSION K_RUNTIMECAP
 	(
-		item
+		identifier
 		| K_NONE
 		|
 		(
@@ -1530,7 +1568,7 @@ set_session_tempspacecap_statement
 :
 	K_SET K_SESSION K_TEMPSPACECAP
 	(
-		item
+		identifier
 		| K_NONE
 	)
 ;
@@ -1552,7 +1590,7 @@ set_time_zone_statement
 			K_TIME K_ZONE
 		)
 		| K_TIMEZONE
-	) K_TO K_INTERVAL? item
+	) K_TO K_INTERVAL? identifier
 ;
 
 //todo update parameters
@@ -1562,7 +1600,7 @@ show_statement
 	K_SHOW
 	(
 		K_ALL
-		| entity
+		| identifier
 	)
 ;
 
@@ -1571,7 +1609,7 @@ show_current_statement
 	K_SHOW K_CURRENT
 	(
 		K_ALL
-		| entity
+		| identifier
 	)
 ;
 
@@ -1586,7 +1624,7 @@ show_database_statement
 
 show_node_statement
 :
-	K_SHOW K_NODE name
+	K_SHOW K_NODE identifier
 	(
 		K_ALL
 		| entities
@@ -1613,15 +1651,13 @@ start_transaction_statement
 
 truncate_table_statement
 :
-	K_TRUNCATE K_TABLE
-	tableReference
+	K_TRUNCATE K_TABLE tableReference
 ;
 
 update_statement
 :
-	K_UPDATE hints? tableReference alias? K_SET expressions
-from_clause?
-where_clause?
+	K_UPDATE hints? tableReference alias? K_SET expressions from_clause?
+	where_clause?
 ;
 
 select_query
@@ -1711,7 +1747,7 @@ into_clause
 
 timeseries_clause
 :
-	K_TIMESERIES columnReference K_AS SINGLE_QUOTE over_clause K_ORDER K_BY
+	K_TIMESERIES columnReference alias over_clause K_ORDER K_BY
 	columnReference
 	(
 		COMMA columnReference
@@ -1768,7 +1804,7 @@ match_clause
 		COMMA columnReference
 	)* K_DEFINE
 	(
-		item K_AS
+		identifier K_AS
 		(
 			exp
 			| predicates
@@ -1777,13 +1813,13 @@ match_clause
 	(
 		COMMA
 		(
-			item K_AS
+			identifier K_AS
 			(
 				exp
 				| predicates
 			)
 		)
-	)* K_PATTERN item K_AS OPEN_PAREN regex CLOSE_PAREN
+	)* K_PATTERN identifier K_AS OPEN_PAREN identifier CLOSE_PAREN
 	(
 		(
 			K_ROWS K_MATCH
@@ -1800,10 +1836,7 @@ match_clause
 	)? CLOSE_PAREN
 ;
 
-regex
-:
-	item
-;
+
 
 orderbyItem
 :
@@ -1858,7 +1891,7 @@ joinedTable
 		)
 		| K_NATURAL
 		| K_CROSS
-	)? K_JOIN tableSample? joinPredicate?
+	)? K_JOIN hints? tableSample? joinPredicate?
 ;
 
 elements
@@ -1870,12 +1903,10 @@ elements
 ;
 
 element
-:
-	(
-		STAR
-		| exp
-		| OPEN_PAREN select_query CLOSE_PAREN
-	) alias?
+: 
+	(( exp
+		| OPEN_PAREN select_query CLOSE_PAREN 
+	) alias?) | asteriskExp
 ;
 
 expressions
@@ -1888,12 +1919,19 @@ expressions
 
 exp
 :
-	OPEN_PAREN?
+	(OPEN_PAREN
 	(
-		columnReference
-		| func_call
+		number
+		| functionCall
+		 | columnReference
 		| caseExp
-	) CLOSE_PAREN?
+	) CLOSE_PAREN) | (
+	(
+		number
+		| functionCall
+		 | columnReference
+		| caseExp
+	) )
 ;
 
 predicate
@@ -1911,7 +1949,7 @@ nullPredicate
 :
 	(
 		columnReference
-		| func_call
+		| functionCall
 	) K_IS
 	(
 		K_NOT
@@ -1926,9 +1964,9 @@ likePredicate
 		| K_ILIKE
 		| K_LIKEB
 		| K_ILIKEB
-	) item
+	) identifier
 	(
-		K_ESCAPE item
+		K_ESCAPE identifier
 	)?
 ;
 
@@ -1980,9 +2018,8 @@ inPredicateValues
 
 constantExp
 :
-	DECIMAL
-	| STRING
-	|
+	number |string
+	
 	(
 		K_IS K_NOT? K_NULL
 	)
@@ -2004,19 +2041,15 @@ booleanPredicate
 
 caseExp
 :
-	K_CASE K_WHEN exp K_THEN result
+	K_CASE K_WHEN exp K_THEN exp
 	(
-		K_WHEN exp K_THEN result
+		K_WHEN exp K_THEN exp
 	)*
 	(
-		K_ELSE result
+		K_ELSE exp
 	)? K_END
 ;
 
-result
-:
-	item
-;
 
 condition
 :
@@ -2027,59 +2060,309 @@ condition
 alias
 :
 	(
-		K_AS? item
+		K_AS? identifier
 	)
 ;
 
-arglist
+functionCall
 :
-	OPEN_PAREN
+	function OPEN_PAREN
 	(
-		dataTypes
-		(
-			COMMA dataTypes
-		)*
-	)? CLOSE_PAREN
-;
-
-func_call
-:
-	funcName OPEN_PAREN
-	(
-		STAR
-		|
-		(
+		
+		
 			(
 				K_ALL
 				| K_DISTINCT
-			)? exp_args
-		)
+			)? elements?
+		
 	)? CLOSE_PAREN
 ;
 
-exp_args
+
+
+notifierParam
 :
+	K_NO K_CHECK K_COMMITTED
 	(
-		(
-			OPEN_PAREN exp_args CLOSE_PAREN
-		)
-		| item
-	)
+		K_ENABLE
+		| K_DISABLE
+	) K_IDENTIFIED K_BY identifier K_MAXMEMORYSIZE identifier K_MAXPAYLOAD identifier K_PARAMETERS
+	identifier
+;
+
+keyValuePairs
+:
+	keyValuePair
 	(
-		COMMA
-		(
-			(
-				OPEN_PAREN exp_args CLOSE_PAREN
-			)
-			| item
-		)
+		COMMA keyValuePair
 	)*
 ;
 
-funcName
+keyValuePair
 :
-	aggregateFunction
-	| entity
+	identifier operator identifier
+;
+
+hints
+:
+	OPEN_HINT hint
+	(
+		COMMA hint
+	)* CLOSE_HINT
+;
+
+hint
+:
+	(
+		K_ALLNODES
+	)
+	|
+	(
+		K_GBYTYPE
+		(
+			K_HASH
+			| K_PIPE
+		)
+	)
+	|
+	(
+		K_ENABLE_WITH_CLAUSE_MATERIALIZATION
+	)
+	| K_EARLY_MATERIALIZATION
+	| K_DIRECT
+	|
+	(
+		K_LABEL OPEN_PAREN identifier CLOSE_PAREN
+	) K_SYN_JOIN
+	| K_SYNTACTIC_JOIN
+	|
+	(
+		K_DISTRIB OPEN_PAREN
+		(
+			identifier
+		) (COMMA
+		(
+			identifier
+		))* CLOSE_PAREN
+	)
+	|
+	(
+		K_JTYPE OPEN_PAREN
+		(
+			identifier
+		) CLOSE_PAREN
+	)
+	|
+	(
+		K_UTYPE OPEN_PAREN
+		(
+			identifier
+		) CLOSE_PAREN
+	)
+	|
+	(
+		K_PROJS OPEN_PAREN
+		(
+			(
+				(
+					schemaReference DOT
+				)? identifier
+			)
+			(
+				COMMA
+				(
+					(
+						schemaReference DOT
+					)? identifier
+				)
+			)
+		) CLOSE_PAREN
+	)
+	|
+	(
+		K_SKIP_PROJS OPEN_PAREN
+		(
+			(
+				(
+					schemaReference DOT
+				)? identifier
+			)
+			(
+				COMMA
+				(
+					(
+						schemaReference DOT
+					)? identifier
+				)
+			)
+		) CLOSE_PAREN
+	)
+	|
+	(
+		K_IGNORECONST OPEN_PAREN
+		(
+			DECIMAL
+		) CLOSE_PAREN
+	)
+	| K_VERBATIM
+;
+
+
+
+columnReference
+:
+	(
+		(
+			(
+				(
+					dbname DOT
+				)?
+				(
+					schema DOT
+				)
+			)?
+			(
+				table DOT
+			)
+		)
+	)? column
+;
+
+tableReference
+:
+	(
+		(
+			dbname DOT
+		)?
+		(
+			schema DOT
+		)
+	)? table
+;
+projectionReference
+:
+	((
+		(
+			dbname DOT
+		)?
+		(
+			schema DOT
+		)
+	)? table DOT)? projection
+;
+functionReference
+:
+	(
+		(
+			dbname DOT
+		)?
+		(
+			schema DOT
+		)
+	)? function
+;
+
+
+
+
+schemaReference
+:
+	(
+		dbname DOT
+	)? schema
+;
+
+
+dbname
+:
+	identifier
+;
+
+
+
+schema
+:
+	identifier
+;
+table
+:
+	identifier
+;
+
+
+projection
+:
+	identifier
+;
+
+function
+:
+	identifier | aggregateFunction
+;
+
+column
+:
+	identifier
+;
+entities
+:
+	identifier
+	(
+		COMMA identifier
+	)*
+;
+string:
+DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING
+;
+
+number:
+DECIMAL | FLOAT | REAL
+;
+asteriskExp:
+STAR 
+;
+identifier
+:
+	WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING
+;
+
+password_parameter
+:
+	(
+		K_PASSWORD_LIFE_TIME
+		| K_PASSWORD_GRACE_TIME
+		| K_FAILED_LOGIN_ATTEMPTS
+		| K_PASSWORD_LOCK_TIME
+		| K_PASSWORD_REUSE_MAX
+		| K_PASSWORD_REUSE_TIME
+		| K_PASSWORD_MAX_LENGTH
+		| K_PASSWORD_MIN_LENGTH
+		| K_PASSWORD_MIN_LETTERS
+		| K_PASSWORD_MIN_UPPERCASE_LETTERS
+		| K_PASSWORD_MIN_LOWERCASE_LETTERS
+		| K_PASSWORD_MIN_DIGITS
+		| K_PASSWORD_MIN_SYMBOLS
+	)
+;
+
+
+
+operator
+:
+	comparisonOperator
+;
+
+comparisonOperator
+:
+	EQUAL
+	| EQUAL_GT
+	| GT
+	| LT
+	| LTE
+	| GTE
+	| LT_GT
+	| BANG_EQUAL
+	| EQUAL2
 ;
 
 aggregateFunction
@@ -2157,707 +2440,175 @@ transactionMode
 		| K_WRITE
 	)?
 ;
+reservedWords:
+K_ALL|
+K_AND|
+K_ANY|
+K_ARRAY|
+K_AS|
+K_ASC|
+K_AUTHORIZATION|
+K_BETWEEN|
+K_BIGINT|
+K_BINARY|
+K_BIT|
+K_BOOLEAN|
+K_BOTH|
+K_CASE|
+K_CAST|
+K_CHAR|
+K_CHAR_LENGTH|
+K_CHARACTER_LENGTH|
+K_CHECK|
+K_COLLATE|
+K_COLUMN|
+K_CONSTRAINT|
+K_CORRELATION|
+K_CREATE|
+K_CROSS|
+K_CURRENT_DATABASE|
+K_CURRENT_DATE|
+K_CURRENT_SCHEMA|
+K_CURRENT_TIME|
+K_CURRENT_TIMESTAMP|
+K_CURRENT_USER|
+K_DATEDIFF|
+K_DATETIME|
+K_DECIMAL|
+K_DECODE|
+K_DEFAULT|
+K_DEFERRABLE|
+K_DESC|
+K_DISTINCT|
+K_ELSE|
+K_ENCODED|
+K_END|
+K_EXCEPT|
+K_EXISTS|
+K_EXTRACT|
+K_FALSE|
+K_FLOAT|
+K_FOR|
+K_FOREIGN|
+K_FROM|
+K_FULL|
+K_GRANT|
+K_GROUP|
+K_HAVING|
+K_ILIKE|
+K_ILIKEB|
+K_IN|
+K_INITIALLY|
+K_INNER|
+K_INOUT|
+K_INT|
+K_INTEGER|
+K_INTERSECT|
+K_INTERVAL|
+K_INTERVALYM|
+K_INTO|
+K_IS|
+K_ISNULL|
+K_JOIN|
+K_KSAFE|
+K_LEADING|
+K_LEFT|
+K_LIKE|
+K_LIKEB|
+K_LIMIT|
+K_LOCALTIME|
+K_LOCALTIMESTAMP|
+K_MATCH|
+K_MINUS|
+K_MONEY|
+K_NATURAL|
+K_NCHAR|
+K_NEW|
+K_NONE|
+K_NOT|
+K_NOTNULL|
+K_NULL|
+K_NULLSEQUAL|
+K_NUMBER|
+K_NUMERIC|
+K_OFFSET|
+K_OLD|
+K_ON|
+K_ONLY|
+K_OR|
+K_ORDER|
+K_OUT|
+K_OUTER|
+K_OVER|
+K_OVERLAPS|
+K_OVERLAY|
+K_PINNED|
+K_POSITION|
+K_PRECISION|
+K_PRIMARY|
+K_REAL|
+K_REFERENCES|
+K_RIGHT|
+K_ROW|
+K_SCHEMA|
+K_SELECT|
+K_SESSION_USER|
+K_SIMILAR|
+K_SMALLDATETIME|
+K_SMALLINT|
+K_SOME|
+K_SUBSTRING|
+K_SYSDATE|
+K_TABLE|
+K_TEXT|
+K_THEN|
+K_TIME|
+K_TIMESERIES|
+K_TIMESTAMP|
+K_TIMESTAMPADD|
+K_TIMESTAMPDIFF|
+K_TIMESTAMPTZ|
+K_TIMETZ|
+K_TIMEZONE|
+K_TINYINT|
+K_TO|
+K_TRAILING|
+K_TREAT|
+K_TRIM|
+K_TRUE|
+K_UNBOUNDED|
+K_UNION|
+K_UNIQUE|
+K_USER|
+K_USING|
+K_UUID|
+K_VARBINARY|
+K_VARCHAR|
+K_VARCHAR2|
+K_WHEN|
+K_WHERE|
+K_WINDOW|
+K_WITH|
+K_WITHIN
 
-libName
-:
-	name
 ;
-
-password_parameter
-:
-	(
-		K_PASSWORD_LIFE_TIME
-		| K_PASSWORD_GRACE_TIME
-		| K_FAILED_LOGIN_ATTEMPTS
-		| K_PASSWORD_LOCK_TIME
-		| K_PASSWORD_REUSE_MAX
-		| K_PASSWORD_REUSE_TIME
-		| K_PASSWORD_MAX_LENGTH
-		| K_PASSWORD_MIN_LENGTH
-		| K_PASSWORD_MIN_LETTERS
-		| K_PASSWORD_MIN_UPPERCASE_LETTERS
-		| K_PASSWORD_MIN_LOWERCASE_LETTERS
-		| K_PASSWORD_MIN_DIGITS
-		| K_PASSWORD_MIN_SYMBOLS
-	)
-;
-
-notifierParam
-:
-	K_NO K_CHECK K_COMMITTED
-	(
-		K_ENABLE
-		| K_DISABLE
-	) K_IDENTIFIED K_BY name K_MAXMEMORYSIZE item K_MAXPAYLOAD item K_PARAMETERS
-	name
-;
-
-keyValuePairs
-:
-	keyValuePair
-	(
-		COMMA keyValuePair
-	)*
-;
-
-keyValuePair
-:
-	item operator item
-;
-
-names
-:
-	name
-	(
-		COMMA name
-	)*
-;
-
-hints
-:
-	OPEN_HINT hint
-	(
-		COMMA hint
-	)* CLOSE_HINT
-;
-
-hint
-:
-	gbHint
-;
-
-gbHint
-:
-	K_GBYTYPE
-	(
-		K_HASH
-		| K_PIPE
-	)
-;
-
-columnReference
-:
-	(
-		(
-			(
-				(
-					dbname DOT
-				)?
-				(
-					schema DOT
-				)
-			)?
-			(
-				table DOT
-			)
-		)
-	)? column
-;
-
-tableReference
-:
-	(
-		(
-			dbname DOT
-		)?
-		(
-			schema DOT
-		)
-	)? table
-;
-
-functionReference
-:
-	(
-		(
-			dbname DOT
-		)?
-		(
-			schema DOT
-		)
-	)? function
-;
-
-function
-:
-	entity
-;
-
-faultgroup
-:
-	entity
-;
-
-schemaReference
-:
-	(
-		dbname DOT
-	)? schema
-;
-
-name
-:
-	K_HOSTNAME
-	| WORD
-	| STRING
-	| SINGLE_QUOTE
-;
-
-newName
-:
-	K_HOSTNAME
-	| WORD
-	| STRING
-	| SINGLE_QUOTE
-;
-
-operator
-:
-	comparisonOperator
-;
-
-comparisonOperator
-:
-	EQUAL
-	| EQUAL_GT
-	| GT
-	| LT
-	| LTE
-	| GTE
-	| LT_GT
-	| BANG_EQUAL
-	| EQUAL2
-;
-
-dbname
-:
-	entity
-;
-
-entities
-:
-	entity
-	(
-		COMMA entity
-	)*
-;
-
-entity
-:
-	WORD
-	| STRING
-	| K_DEFAULT
-;
-
-table
-:
-	WORD
-	| STRING
-;
-
-schema
-:
-	WORD
-;
-
-column
-:
-	WORD
-	| STRING
-	| DECIMAL
-;
-
-projection
-:
-	WORD
-;
-
-items
-:
-	item
-	(
-		COMMA item
-	)*
-;
-
-item
-:
-	K_INT
-	| WORD
-	| STRING
-	| SINGLE_QUOTE
-	| STAR+
-	| DECIMAL
-;
-
-nonReservedWords
-:
-	K_ABORT
-	| K_ABSOLUTE
-	| K_ACCESS
-	| K_ACCESSRANK
-	| K_ACCOUNT
-	| K_ACTION
-	| K_ACTIVATE
-	| K_ACTIVEPARTITIONCOUNT
-	| K_ADD
-	| K_ADMIN
-	| K_AFTER
-	| K_AGGREGATE
-	| K_ALSO
-	| K_ALTER
-	| K_ANALYSE
-	| K_ANALYTIC
-	| K_ANALYZE
-	| K_ANNOTATED
-	| K_ANTI
-	| K_ASSERTION
-	| K_ASSIGNMENT
-	| K_AT
-	| K_AUTHENTICATION
-	| K_AUTO
-	| K_AUTO_INCREMENT
-	| K_AVAILABLE
-	| K_BACKWARD
-	| K_BASENAME
-	| K_BATCH
-	| K_BEFORE
-	| K_BEGIN
-	| K_BEST
-	| K_BLOCK
-	| K_BLOCK_DICT
-	| K_BLOCKDICT_COMP
-	| K_BROADCAST
-	| K_BY
-	| K_BYTEA
-	| K_BYTES
-	| K_BZIP
-	| K_BZIP_COMP
-	| K_CACHE
-	| K_CALLED
-	| K_CASCADE
-	| K_CATALOGPATH
-	| K_CHAIN
-	| K_CHARACTER
-	| K_CHARACTERISTICS
-	| K_CHARACTERS
-	| K_CHECKPOINT
-	| K_CLASS
-	| K_CLEAR
-	| K_CLOSE
-	| K_CLUSTER
-	| K_COLSIZES
-	| K_COLUMNS_COUNT
-	| K_COMMENT
-	| K_COMMIT
-	| K_COMMITTED
-	| K_COMMONDELTA_COMP
-	| K_COMMUNAL
-	| K_COMPLEX
-	| K_CONNECT
-	| K_CONSTRAINTS
-	| K_CONTROL
-	| K_COPY
-	| K_CPUAFFINITYMODE
-	| K_CPUAFFINITYSET
-	| K_CREATEDB
-	| K_CREATEUSER
-	| K_CSV
-	| K_CUBE
-	| K_CURRENT
-	| K_CURSOR
-	| K_CUSTOM
-	| K_CUSTOM_PARTITIONS
-	| K_CYCLE
-	| K_DATA
-	| K_DATABASE
-	| K_DATAPATH
-	| K_DAY
-	| K_DEACTIVATE
-	| K_DEALLOCATE
-	| K_DEC
-	| K_DECLARE
-	| K_DEFAULTS
-	| K_DEFERRED
-	| K_DEFINE
-	| K_DEFINER
-	| K_DELETE
-	| K_DELIMITER
-	| K_DELIMITERS
-	| K_DELTARANGE_COMP
-	| K_DELTARANGE_COMP_SP
-	| K_DELTAVAL
-	| K_DEPENDS
-	| K_DETERMINES
-	| K_DIRECT
-	| K_DIRECTCOLS
-	| K_DIRECTED
-	| K_DIRECTGROUPED
-	| K_DIRECTPROJ
-	| K_DISABLE
-	| K_DISABLED
-	| K_DISCONNECT
-	| K_DISTVALINDEX
-	| K_DO
-	| K_DOMAIN
-	| K_DOUBLE
-	| K_DROP
-	| K_DURABLE
-	| K_EACH
-	| K_ENABLE
-	| K_ENABLED
-	| K_ENCLOSED
-	| K_ENCODING
-	| K_ENCRYPTED
-	| K_ENFORCELENGTH
-	| K_EPHEMERAL
-	| K_EPOCH
-	| K_ERROR
-	| K_ESCAPE
-	| K_EVENT
-	| K_EVENTS
-	| K_EXCEPTION
-	| K_EXCEPTIONS
-	| K_EXCLUDE
-	| K_EXCLUDING
-	| K_EXCLUSIVE
-	| K_EXECUTE
-	| K_EXECUTIONPARALLELISM
-	| K_EXPIRE
-	| K_EXPLAIN
-	| K_EXPORT
-	| K_EXTERNAL
-	| K_FAILED_LOGIN_ATTEMPTS
-	| K_FAULT
-	| K_FENCED
-	| K_FETCH
-	| K_FILESYSTEM
-	| K_FILLER
-	| K_FILTER
-	| K_FIRST
-	| K_FIXEDWIDTH
-	| K_FLEX
-	| K_FLEXIBLE
-	| K_FOLLOWING
-	| K_FORCE
-	| K_FORMAT
-	| K_FORWARD
-	| K_FREEZE
-	| K_FUNCTION
-	| K_FUNCTIONS
-	| K_GCDDELTA
-	| K_GET
-	| K_GLOBAL
-	| K_GRACEPERIOD
-	| K_GROUPED
-	| K_GROUPING
-	| K_GZIP
-	| K_GZIP_COMP
-	| K_HANDLER
-	| K_HCATALOG
-	| K_HCATALOG_CONNECTION_TIMEOUT
-	| K_HCATALOG_DB
-	| K_HCATALOG_SCHEMA
-	| K_HCATALOG_SLOW_TRANSFER_LIMIT
-	| K_HCATALOG_SLOW_TRANSFER_TIME
-	| K_HCATALOG_USER
-	| K_HIGH
-	| K_HIVE_PARTITION_COLS
-	| K_HIVESERVER2_HOSTNAME
-	| K_HOLD
-	| K_HOST
-	| K_HOSTNAME
-	| K_HOUR
-	| K_HOURS
-	| K_IDENTIFIED
-	| K_IDENTITY
-	| K_IDLESESSIONTIMEOUT
-	| K_IF
-	| K_IGNORE
-	| K_IMMEDIATE
-	| K_IMMUTABLE
-	| K_IMPLICIT
-	| K_INCLUDE
-	| K_INCLUDING
-	| K_INCREMENT
-	| K_INDEX
-	| K_INHERITS
-	| K_INPUT
-	| K_INSENSITIVE
-	| K_INSERT
-	| K_INSTEAD
-	| K_INTERFACE
-	| K_INTERPOLATE
-	| K_INVOKER
-	| K_ISOLATION
-	| K_JSON
-	| K_KEY
-	| K_LABEL
-	| K_LANCOMPILER
-	| K_LANGUAGE
-	| K_LARGE
-	| K_LAST
-	| K_LATEST
-	| K_LESS
-	| K_LEVEL
-	| K_LIBRARY
-	| K_LISTEN
-	| K_LOAD
-	| K_LOCAL
-	| K_LOCATION
-	| K_LOCK
-	| K_LONG
-	| K_LOW
-	| K_LZO
-	| K_MANAGED
-	| K_MASK
-	| K_MATCHED
-	| K_MATERIALIZE
-	| K_MAXCONCURRENCY
-	| K_MAXCONCURRENCYGRACE
-	| K_MAXCONNECTIONS
-	| K_MAXMEMORYSIZE
-	| K_MAXPAYLOAD
-	| K_MAXQUERYMEMORYSIZE
-	| K_MAXVALUE
-	| K_MEDIUM
-	| K_MEMORYCAP
-	| K_MEMORYSIZE
-	| K_MERGE
-	| K_MERGEOUT
-	| K_METHOD
-	| K_MICROSECONDS
-	| K_MILLISECONDS
-	| K_MINUTE
-	| K_MINUTES
-	| K_MINVALUE
-	| K_MODE
-	| K_MODEL
-	| K_MONTH
-	| K_MOVE
-	| K_MOVEOUT
-	| K_NAME
-	| K_NATIONAL
-	| K_NATIVE
-	| K_NETWORK
-	| K_NEXT
-	| K_NO
-	| K_NOCREATEDB
-	| K_NOCREATEUSER
-	| K_NODE
-	| K_NODES
-	| K_NOTHING
-	| K_NOTIFIER
-	| K_NOTIFY
-	| K_NOWAIT
-	| K_NULLAWARE
-	| K_NULLCOLS
-	| K_NULLS
-	| K_OBJECT
-	| K_OCTETS
-	| K_OF
-	| K_OFF
-	| K_OIDS
-	| K_OPERATOR
-	| K_OPT
-	| K_OPTIMIZER
-	| K_OPTION
-	| K_OPTVER
-	| K_ORC
-	| K_OTHERS
-	| K_OWNER
-	| K_PARAMETER
-	| K_PARAMETERS
-	| K_PARQUET
-	| K_PARSER
-	| K_PARTIAL
-	| K_PARTITION
-	| K_PARTITIONING
-	| K_PASSWORD
-	| K_PASSWORD_GRACE_TIME
-	| K_PASSWORD_LIFE_TIME
-	| K_PASSWORD_LOCK_TIME
-	| K_PASSWORD_MAX_LENGTH
-	| K_PASSWORD_MIN_DIGITS
-	| K_PASSWORD_MIN_LENGTH
-	| K_PASSWORD_MIN_LETTERS
-	| K_PASSWORD_MIN_LOWERCASE_LETTERS
-	| K_PASSWORD_MIN_SYMBOLS
-	| K_PASSWORD_MIN_UPPERCASE_LETTERS
-	| K_PASSWORD_REUSE_MAX
-	| K_PASSWORD_REUSE_TIME
-	| K_PATTERN
-	| K_PERCENT
-	| K_PERMANENT
-	| K_PLACING
-	| K_PLANNEDCONCURRENCY
-	| K_POLICY
-	| K_POOL
-	| K_PORT
-	| K_PRECEDING
-	| K_PREPARE
-	| K_PREPASS
-	| K_PRESERVE
-	| K_PREVIOUS
-	| K_PRIOR
-	| K_PRIORITY
-	| K_PRIVILEGES
-	| K_PROCEDURAL
-	| K_PROCEDURE
-	| K_PROFILE
-	| K_PROJECTION
-	| K_PROJECTIONS
-	| K_PSDATE
-	| K_QUERY
-	| K_QUEUETIMEOUT
-	| K_QUOTE
-	| K_RANGE
-	| K_RAW
-	| K_READ
-	| K_RECHECK
-	| K_RECORD
-	| K_RECOVER
-	| K_RECURSIVE
-	| K_REFRESH
-	| K_REINDEX
-	| K_REJECTED
-	| K_REJECTMAX
-	| K_RELATIVE
-	| K_RELEASE
-	| K_REMOVE
-	| K_RENAME
-	| K_REORGANIZE
-	| K_REPEATABLE
-	| K_REPLACE
-	| K_RESET
-	| K_RESOURCE
-	| K_RESTART
-	| K_RESTRICT
-	| K_RESULTS
-	| K_RETURN
-	| K_RETURNREJECTED
-	| K_REVOKE
-	| K_RLE
-	| K_ROLE
-	| K_ROLES
-	| K_ROLLBACK
-	| K_ROLLUP
-	| K_ROWS
-	| K_RULE
-	| K_RUNTIMECAP
-	| K_RUNTIMEPRIORITY
-	| K_RUNTIMEPRIORITYTHRESHOLD
-	| K_SAVE
-	| K_SAVEPOINT
-	| K_SCROLL
-	| K_SEARCH_PATH
-	| K_SECOND
-	| K_SECONDS
-	| K_SECURITY
-	| K_SECURITY_ALGORITHM
-	| K_SEGMENTED
-	| K_SEMI
-	| K_SEMIALL
-	| K_SEQUENCE
-	| K_SEQUENCES
-	| K_SERIALIZABLE
-	| K_SESSION
-	| K_SET
-	| K_SETOF
-	| K_SETS
-	| K_SHARE
-	| K_SHARED
-	| K_SHOW
-	| K_SIMPLE
-	| K_SINGLEINITIATOR
-	| K_SITE
-	| K_SITES
-	| K_SKIP
-	| K_SOURCE
-	| K_SPLIT
-	| K_SSL_CONFIG
-	| K_STABLE
-	| K_STANDBY
-	| K_START
-	| K_STATEMENT
-	| K_STATISTICS
-	| K_STDIN
-	| K_STDOUT
-	| K_STEMMER
-	| K_STORAGE
-	| K_STREAM
-	| K_STRENGTH
-	| K_STRICT
-	| K_SUBNET
-	| K_SYSID
-	| K_SYSTEM
-	| K_TABLES
-	| K_TABLESAMPLE
-	| K_TABLESPACE
-	| K_TEMP
-	| K_TEMPLATE
-	| K_TEMPORARY
-	| K_TEMPSPACECAP
-	| K_TERMINATOR
-	| K_THAN
-	| K_TIES
-	| K_TLS
-	| K_TOAST
-	| K_TOKENIZER
-	| K_TOLERANCE
-	| K_TRANSACTION
-	| K_TRANSFORM
-	| K_TRICKLE
-	| K_TRIGGER
-	| K_TRUNCATE
-	| K_TRUSTED
-	| K_TUNING
-	| K_TYPE
-	| K_UDPARAMETER
-	| K_UNCOMMITTED
-	| K_UNCOMPRESSED
-	| K_UNI
-	| K_UNINDEXED
-	| K_UNKNOWN
-	| K_UNLIMITED
-	| K_UNLISTEN
-	| K_UNLOCK
-	| K_UNPACKER
-	| K_UNSEGMENTED
-	| K_UPDATE
-	| K_USAGE
-	| K_VACUUM
-	| K_VALIDATE
-	| K_VALIDATOR
-	| K_VALINDEX
-	| K_VALUE
-	| K_VALUES
-	| K_VARYING
-	| K_VERBOSE
-	| K_VERTICA
-	| K_VIEW
-	| K_VOLATILE
-	| K_WAIT
-	| K_WEBHDFS_ADDRESS
-	| K_WEBSERVICE_HOSTNAME
-	| K_WEBSERVICE_PORT
-	| K_WITHOUT
-	| K_WORK
-	| K_WRITE
-	| K_YEAR
-	| K_ZONE
-;
-
 bool_expression
 :
 	K_TRUE
 	| K_FALSE
 ;
 
-host_ip_address
+
+
+arglist
 :
-	IPV4_ADDR
-	| IPV6_ADDR
+	OPEN_PAREN
+	(
+		dataTypes
+		(
+			COMMA dataTypes
+		)*
+	)? CLOSE_PAREN
 ;
 
 dataTypes
