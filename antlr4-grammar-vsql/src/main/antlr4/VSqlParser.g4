@@ -8,7 +8,7 @@ options {
 	tokenVocab = VSqlLexer;
 }
 
-root: ( statement SEMI?)* EOF?;
+root: ( statement SEMI)* EOF?;
 
 statement:
 	(
@@ -26,7 +26,7 @@ statement:
 		| alter_projection_statement
 		| alter_profile_statement
 		| alter_profile_rename_statement
-		| alter_resource_pool_statement // to do update params
+		| alter_resource_pool_statement
 		| alter_role_rename_statement
 		| alter_schema_statement
 		| alter_sequence_statement
@@ -168,110 +168,123 @@ empty_statement: SEMI;
 
 alter_access_policy_statement:
 	K_ALTER K_ACCESS K_POLICY K_ON tableReference (
-		( K_FOR K_COLUMN column expressions?)
-		| (K_FOR K_ROWS ( K_WHERE expressions)?) (
-			K_ENABLE
-			| K_DISABLE
-		)
-	)
-	| (
-		( K_FOR K_COLUMN column)
-		| ( K_FOR K_ROWS) K_COPY K_TO K_TABLE table
-	);
+		( K_FOR K_COLUMN column predicates)
+		| ( K_FOR K_ROWS where_clause?)
+	) (enableOrDisable | ( K_COPY K_TO K_TABLE table));
 
 alter_authentication_statement:
-	K_ALTER K_AUTHENTICATION identifier (
-		( K_ENABLE | K_DISABLE)
-		| (
-			K_LOCAL
-			| (
-				K_HOST (K_TLS | K_NO K_TLS) (
-					IPV4_ADDR
-					| IPV6_ADDR
-				)
-			)
-		)
-		| ( K_RENAME K_TO identifier)
-		| ( K_METHOD identifier)
-		| ( K_SET keyValuePairs)
-		| (
-			K_PRIORITY identifier //int
-		)
+	K_ALTER K_AUTHENTICATION auth_method_name = identifier (
+		enableOrDisable
+		| (K_LOCAL | ( K_HOST ( K_TLS | K_NO K_TLS)? ( address)))
+		| ( K_RENAME K_TO value)
+		| ( K_METHOD method)
+		| ( K_SET commaSeparatedKeyValuePairs)
+		| ( K_PRIORITY priority = value)
 	);
 
 alter_database_drop_statement:
 	K_ALTER K_DATABASE dbname (
 		( K_DROP K_ALL K_FAULT K_GROUP)
-		| ( K_EXPORT K_ON ( identifier | K_DEFAULT))
+		| ( K_EXPORT K_ON subnet = identifier)
 		| ( K_RESET K_STANDBY)
-		| ( K_SET ( K_PARAMETER)? keyValuePairs)
-		| ( K_CLEAR ( K_PARAMETER)? entities)
+		| ( K_SET ( K_PARAMETER)? commaSeparatedKeyValuePairs)
+		| ( K_CLEAR ( K_PARAMETER)? params)
 	);
 
 alter_fault_group_statement:
-	K_ALTER K_FAULT K_GROUP identifier (
-		( K_ADD K_NODE identifier)
-		| ( K_DROP K_NODE identifier)
-		| ( K_ADD K_FAULT K_GROUP identifier)
-		| ( K_DROP K_FAULT K_GROUP identifier)
-		| ( K_RENAME K_TO identifier)
+	K_ALTER K_FAULT K_GROUP faultGroup (
+		( K_ADD K_NODE node)
+		| ( K_DROP K_NODE node)
+		| ( K_ADD K_FAULT K_GROUP value)
+		| ( K_DROP K_FAULT K_GROUP value)
+		| ( K_RENAME K_TO value)
 	);
 
 alter_function_statement:
 	K_ALTER K_FUNCTION functionReference arglist? CLOSE_PAREN (
-		( K_OWNER K_TO identifier)
-		| ( K_RENAME K_TO identifier)
-		| ( K_SET K_SCHEMA identifier)
+		( K_OWNER K_TO owner)
+		| ( K_RENAME K_TO value)
+		| ( K_SET K_SCHEMA schema)
 		| ( K_SET K_FENCED bool_expression)
 	);
 
 alter_hcatalog_schema_statement:
-	K_ALTER K_HCATALOG K_SCHEMA schema K_SET keyValuePairs;
+	K_ALTER K_HCATALOG K_SCHEMA schema K_SET hcatalog_schema_param+;
 
 alter_library_statement:
-	K_ALTER K_LIBRARY (schemaReference DOT)? identifier (
-		K_DEPENDS identifier (K_LANGUAGE identifier)?
-	)? K_AS identifier;
+	K_ALTER K_LIBRARY libraryReference (
+		K_DEPENDS depends = value (K_LANGUAGE lang = value)?
+	)? alias;
 
 alter_model_statement:
-	K_ALTER K_MODEL (schemaReference DOT)? identifier (
-		( K_OWNER K_TO identifier)
-		| ( K_RENAME K_TO identifier)
-		| ( K_SET K_SCHEMA identifier)
+	K_ALTER K_MODEL modelReference (
+		( K_OWNER K_TO owner)
+		| ( K_RENAME K_TO value)
+		| ( K_SET K_SCHEMA schema)
 	);
 
 alter_network_interface_statement:
-	K_ALTER K_NETWORK K_INTERFACE identifier K_RENAME K_TO identifier;
+	K_ALTER K_NETWORK K_INTERFACE identifier K_RENAME K_TO value;
 
 alter_node_statement:
-	K_ALTER K_NODE identifier (
-		( K_EXPORT K_ON ( identifier | K_DEFAULT))
-		| ( K_IS) identifier
-		| K_REPLACE ( K_WITH identifier)
+	K_ALTER K_NODE node (
+		( K_EXPORT K_ON identifier)
+		| ( ( K_IS)? nodeType = value)
+		| ( K_REPLACE ( K_WITH standByNode = value)?)
 		| K_RESET
-		| K_SET ( K_PARAMETER)? keyValuePairs
-		| K_CLEAR ( K_PARAMETER)? entities
+		| K_SET ( K_PARAMETER)? commaSeparatedKeyValuePairs
+		| K_CLEAR ( K_PARAMETER)? params
 	);
 
 alter_notfifier_statement:
-	K_ALTER K_NOTIFIER identifier notifierParam (
-		COMMA notifierParam
-	)*;
+	K_ALTER K_NOTIFIER identifier (notifier_params)*;
+
+notifier_params:
+	(K_NO? K_CHECK K_COMMITTED)
+	| enableOrDisable
+	| ( K_IDENTIFIED K_BY identifier)
+	| ( K_MAXMEMORYSIZE value)
+	| ( K_MAXPAYLOAD value)
+	| ( K_PARAMETERS value);
 
 alter_projection_statement:
-	K_ALTER K_PROJECTION (schemaReference DOT)? identifier K_RENAME K_TO identifier;
+	K_ALTER K_PROJECTION projectionReference K_RENAME K_TO value;
 
 alter_profile_statement:
-	K_ALTER K_PROFILE (identifier) K_LIMIT password_parameter identifier;
+	K_ALTER K_PROFILE identifier K_LIMIT (password_parameter)+;
 
 alter_profile_rename_statement:
-	K_ALTER K_PROFILE identifier K_RENAME K_TO identifier;
+	K_ALTER K_PROFILE identifier K_RENAME K_TO value;
 
 alter_resource_pool_statement:
-	K_ALTER K_RESOURCE K_POOL identifier identifier;
+	K_ALTER K_RESOURCE K_POOL identifier resource_pool_param+;
+
+resource_pool_param:
+	(K_CASCADE K_TO value)
+	| (K_CPUAFFINITYMODE ( K_SHARED | K_EXCLUSIVE | K_ANY))
+	| (
+		K_CPUAFFINITYSET (
+			K_NONE
+			| ( value COMMA value)
+			| ( value MINUS value)
+			| number
+		)
+	)
+	| ( K_EXECUTIONPARALLELISM ( number | K_AUTO))
+	| ( K_MAXCONCURRENCY ( number | K_NONE))
+	| ( K_MAXMEMORYSIZE ( number | K_NONE))
+	| ( K_MAXQUERYMEMORYSIZE ( number | K_NONE))
+	| ( K_MEMORYSIZE number)
+	| ( K_PLANNEDCONCURRENCY ( number | K_AUTO))
+	| ( K_PRIORITY ( number | K_HOLD))
+	| ( K_QUEUETIMEOUT ( number | K_NONE))
+	| ( K_RUNTIMECAP ( interval | K_NONE))
+	| ( K_RUNTIMEPRIORITY ( K_HIGH | K_MEDIUM | K_LOW))
+	| ( K_RUNTIMEPRIORITYTHRESHOLD number)
+	| ( K_SINGLEINITIATOR);
 
 alter_role_rename_statement:
-	K_ALTER K_ROLE identifier K_RENAME K_TO identifier;
+	K_ALTER K_ROLE identifier K_RENAME K_TO value;
 
 alter_schema_statement:
 	K_ALTER K_SCHEMA (
@@ -280,105 +293,143 @@ alter_schema_statement:
 				(
 					K_DEFAULT (K_INCLUDE | K_EXCLUDE) K_SCHEMA K_PRIVILEGES
 				)
-				| ( K_OWNER K_TO identifier ( K_CASCADE)?)
+				| ( K_OWNER K_TO owner ( K_CASCADE)?)
 			)
 		)
 		| (
 			schemaReference (COMMA schema)* (
-				K_RENAME K_TO entities
+				K_RENAME K_TO value ( COMMA value)*
 			)
 		)
 	);
 
 alter_sequence_statement:
-	K_ALTER K_SEQUENCE (
+	K_ALTER K_SEQUENCE sequenceReference (
 		(
-			(schemaReference DOT)? identifier (
-				K_INCREMENT K_BY DECIMAL
-			)? (( K_MINVALUE DECIMAL) | ( K_NO K_MINVALUE))? (
-				( K_MAXVALUE DECIMAL)
-				| ( K_NO K_MAXVALUE)
-			)? (K_RESTART K_WITH DECIMAL)? (
-				( K_CACHE DECIMAL)
-				| ( K_NO K_CACHE) ( K_CYCLE | K_NO K_CYCLE)
-			)?
-		)
-		| (
-			(schemaReference DOT)? identifier (
-				( K_RENAME K_TO identifier)
-				| ( K_SET K_SCHEMA identifier)
-				| ( K_OWNER K_TO identifier)
+			sequence_params
+			| (
+				( K_RENAME K_TO value)
+				| ( K_SET K_SCHEMA schema)
+				| ( K_OWNER K_TO owner)
 			)
 		)
 	);
+
+sequence_params:
+	(K_INCREMENT K_BY DECIMAL)? (
+		( K_MINVALUE DECIMAL)
+		| ( K_NO K_MINVALUE)
+	)? (( K_MAXVALUE DECIMAL) | ( K_NO K_MAXVALUE))? (
+		K_RESTART K_WITH DECIMAL
+	)? (
+		( K_CACHE DECIMAL)
+		| ( K_NO K_CACHE) ( K_CYCLE | K_NO K_CYCLE)
+	)?;
 
 alter_session_statement:
 	K_ALTER K_SESSION (
-		( K_SET K_PARAMETER? keyValuePairs)
-		| ( K_CLEAR K_PARAMETER? entities?)
-		| (K_SET K_UDPARAMETER ( K_FOR identifier)? keyValuePairs)
-		| (K_CLEAR K_UDPARAMETER ( K_FOR identifier)? entities?)
+		(K_SET K_PARAMETER? commaSeparatedKeyValuePairs)
+		| ( K_CLEAR K_PARAMETER? params)
+		| (
+			K_SET K_UDPARAMETER (K_FOR library)? commaSeparatedKeyValuePairs
+		)
+		| ( K_CLEAR K_UDPARAMETER ( K_FOR library)? params)
 	);
 
 alter_subnet_statement:
-	K_ALTER K_SUBNET identifier K_RENAME K_TO identifier;
+	K_ALTER K_SUBNET identifier K_RENAME K_TO value;
 
 alter_table_rename_statement:
-	K_ALTER K_TABLE tableReference (COMMA table)* K_RENAME K_TO entities;
+	K_ALTER K_TABLE tableReference (COMMA table)* K_RENAME K_TO value (
+		COMMA value
+	)*;
 // todo
 
 alter_table_general_statment:
-	K_ALTER K_TABLE tableReference (
-		alter_table_item ( COMMA alter_table_item)*
-	);
+	K_ALTER K_TABLE tableReference alter_table_item alter_table_item*;
 
 alter_table_item:
-	(K_ADD K_COLUMN ( K_IF K_NOT K_EXISTS)? column dataTypes);
-
-alter_user_statement:
-	K_ALTER K_USER identifier (
-		(
-			(
-				K_DEFAULT K_ROLE (
-					K_NONE
-					| entities
-					| K_ALL
-					| (K_ALL K_EXCEPT entities)
-				)
-			)
-			| (K_RENAME K_TO string)
+	(
+		K_ADD K_COLUMN (K_IF K_NOT K_EXISTS)? column dataTypes (
+			(K_CONSTRAINT identifier)? (K_NOT? K_NULL)
+			| ( K_DEFAULT expression)
+		)? encoding_clause? (
+			K_PROJECTIONS OPEN_PAREN projectionReference (
+				COMMA projectionReference
+			)* CLOSE_PAREN
+		)?
+	)
+	| ( K_ADD table_constraint)
+	| (
+		K_ALTER K_COLUMN column (
+			( K_SET K_DEFAULT expression)
+			| ( K_DROP K_DEFAULT)
+			| ( K_SET K_USING expression)
+			| ( K_DROP K_SET K_USING)
+			| ( K_SET K_DEFAULT K_USING expression)
+			| ( K_DROP K_DEFAULT K_USING expression)
+			| ( K_SET nullOrNotNull)
+			| ( K_SET K_DATATYPE dataTypes)
 		)
-		| (
-			(K_ACCOUNT (K_LOCK | K_UNLOCK))
-			| (K_GRACEPERIOD (K_NONE | interval))
-			| (K_IDENTIFIED K_BY string (K_REPLACE string)?)
-			| (K_IDLESESSIONTIMEOUT (K_NONE | interval))
-			| (
-				K_MAXCONNECTIONS (
-					K_NONE
-					| (number K_ON (K_DATABASE | K_NODE))
-				)
-			)
-			| (K_MEMORYCAP (K_NONE | string))
-			| (K_PASSWORD K_EXPIRE)
-			| (K_PROFILE (K_DEFAULT | string))
-			| (K_RESOURCE K_POOL string)
-			| (K_RUNTIMECAP (K_NONE | string))
-			| (
-				K_SEARCH_PATH (
-					K_DEFAULT
-					| (schema (COMMA schema)*)
-				)
-			)
-			| (K_SECURITY_ALGORITHM string)
-			| (K_TEMPSPACECAP (K_NONE | interval))
-		)+
-	);
+	)
+	| ( K_ALTER K_CONSTRAINT identifier enableOrDisable)
+	| (K_DROP K_CONSTRAINT identifier ( K_CASCADE | K_RESTRICT)?)
+	| (
+		K_DROP K_COLUMN? (K_IF K_EXISTS)? column (
+			K_CASCADE
+			| K_RESTRICT
+		)?
+	)
+	| ( K_FORCE K_OUTER number)
+	| (
+		(K_INCLUDE | K_EXCLUDE | K_MATERIALIZE) K_SCHEMA? K_PRIVILEGES
+	)
+	| ( K_OWNER K_TO owner)
+	| ( partition_clause K_REORGANIZE?)
+	| ( K_REMOVE K_PARTITIONING)
+	| ( K_RENAME K_COLUMN? column K_TO column)
+	| ( K_REORGANIZE)
+	| ( K_SET K_ACTIVEPARTITIONCOUNT expression)
+	| ( K_SET K_SCHEMA schema)
+	| ( K_SET K_STORAGE load_method);
 
+alter_user_statement: K_ALTER K_USER user user_params+;
+user_params:
+	(
+		(
+			K_DEFAULT K_ROLE (
+				K_NONE
+				| entities
+				| K_ALL
+				| ( K_ALL K_EXCEPT entities)
+			)
+		)
+		| ( K_RENAME K_TO string)
+	)
+	| (
+		( K_ACCOUNT ( K_LOCK | K_UNLOCK))
+		| ( K_GRACEPERIOD ( K_NONE | interval))
+		| ( K_IDENTIFIED K_BY string ( K_REPLACE string)?)
+		| ( K_IDLESESSIONTIMEOUT ( K_NONE | interval))
+		| (
+			K_MAXCONNECTIONS (
+				K_NONE
+				| ( number K_ON ( K_DATABASE | K_NODE))
+			)
+		)
+		| ( K_MEMORYCAP ( K_NONE | string))
+		| ( K_PASSWORD K_EXPIRE)
+		| ( K_PROFILE ( K_DEFAULT | string))
+		| ( K_RESOURCE K_POOL string)
+		| ( K_RUNTIMECAP ( K_NONE | string))
+		| (K_SEARCH_PATH ( K_DEFAULT | ( schema ( COMMA schema)*)))
+		| ( K_SECURITY_ALGORITHM string)
+		| ( K_TEMPSPACECAP ( K_NONE | interval))
+	);
 alter_view_statement:
 	K_ALTER K_VIEW (schemaReference DOT)? (
 		entities (
-			K_OWNER K_TO identifier
+			K_OWNER K_TO owner
 			| K_SET K_SCHEMA identifier
 			| (K_INCLUDE | K_EXCLUDE | K_MATERIALIZE) (K_SCHEMA)? K_PRIVILEGES
 		)
@@ -405,25 +456,33 @@ comment_on_statement:
 
 comment_on_column_statement:
 	K_COMMENT K_ON K_COLUMN projectionReference DOT column comment_value;
+
 comment_on_constraint_statement:
 	K_COMMENT K_ON K_CONSTRAINT identifier K_ON tableReference comment_value;
+
 comment_on_function_statement:
 	K_COMMENT K_ON K_FUNCTION functionReference arglist comment_value;
+
 comment_on_transform_function_statement:
 	K_COMMENT K_ON K_TRANSFORM K_FUNCTION functionReference OPEN_PAREN (
 		identifier dataTypes (COMMA identifier dataTypes)*
 	)? CLOSE_PAREN comment_value;
+
 comment_on_library_statement:
 	K_COMMENT K_ON K_FUNCTION libraryReference comment_value;
 
 comment_on_node_statement:
 	K_COMMENT K_ON K_NODE node comment_value;
+
 comment_on_schema_statement:
 	K_COMMENT K_ON K_SCHEMA schema comment_value;
+
 comment_on_sequence_statement:
 	K_COMMENT K_ON K_SEQUENCE sequenceReference comment_value;
+
 comment_on_table_statement:
 	K_COMMENT K_ON K_TABLE tableReference comment_value;
+
 comment_on_view_statement:
 	K_COMMENT K_ON K_VIEW tableReference comment_value;
 
@@ -445,9 +504,7 @@ copy_local_statement: todo_statement;
 copy_from_vertica_statement:
 	K_COPY tableReference (column ( COMMA column)*)? K_FROM K_VERTICA tableReference (
 		column ( COMMA column)*
-	)? (K_AUTO | K_DIRECT | K_TRICKLE)? (
-		K_STREAM K_NAME identifier
-	)? (K_NO K_COMMIT)?;
+	)? load_method? (K_STREAM K_NAME identifier)? (K_NO K_COMMIT)?;
 
 create_access_policy_statement:
 	K_CREATE K_ACCESS K_POLICY K_ON tableReference (
@@ -457,16 +514,21 @@ create_access_policy_statement:
 
 create_authentication_statement:
 	K_CREATE K_AUTHENTICATION identifier K_METHOD identifier (
-		(K_LOCAL)
+		( K_LOCAL)
 		| (
-			K_HOST (K_TLS | (K_NO K_TLS))? (
+			K_HOST (K_TLS | ( K_NO K_TLS))? (
 				IPV4_ADDR
 				| IPV6_ADDR
 			)
 		)
 	);
 
-create_branch_statement: todo_statement;
+create_branch_statement:
+	K_CREATE K_DATA K_IMMUTABLE K_BRANCH (branch_identifier) (
+		COMMA branch_identifier
+	)* (K_LIKE value)?;
+
+branch_identifier: identifier number?;
 
 create_external_table_as_copy_statement: todo_statement;
 
@@ -482,31 +544,63 @@ create_function_statements_statement: todo_statement;
 create_hcatalog_schema_statement:
 	K_CREATE K_HCATALOG K_SCHEMA (K_IF K_NOT K_EXISTS)? schema (
 		K_AUTHORIZATION identifier
-	)? (K_WITH keyValuePair+)?;
+	)? (K_WITH ( hcatalog_schema_param)+)?;
+
+hcatalog_schema_param:
+	key = (
+		K_HOSTNAME
+		| K_PORT
+		| K_HIVESERVER2_HOSTNAME
+		| K_WEBSERVICE_HOSTNAME
+		| K_WEBSERVICE_PORT
+		| K_WEBHDFS_ADDRESS
+		| K_HCATALOG_SCHEMA
+		| K_CUSTOM_PARTITIONS
+		| K_HCATALOG_USER
+		| K_HCATALOG_CONNECTION_TIMEOUT
+		| K_HCATALOG_SLOW_TRANSFER_LIMIT
+		| K_HCATALOG_SLOW_TRANSFER_TIME
+		| K_SSL_CONFIG
+	) EQUAL value;
 
 create_library_statement:
-	K_CREATE (K_OR K_REPLACE)? K_LIBRARY libraryReference K_AS string (
-		K_DEPENDS string
+	K_CREATE (K_OR K_REPLACE)? K_LIBRARY libraryReference alias (
+		K_DEPENDS identifier
 	)? (K_LANGUAGE string)?;
 
-create_load_balance_group_statement: todo_statement;
+create_load_balance_group_statement:
+	K_CREATE K_LOAD K_BALANCE K_GROUP identifier K_WITH (
+		( K_ADDRESS identifier ( COMMA identifier)*)
+		| (
+			K_FAULT K_GROUP identifier (COMMA identifier)* K_FILTER value
+		)
+	) (K_POLICY value)?;
 
 create_local_temporary_view_statement: todo_statement;
 
 create_location_statement:
-	K_CREATE K_LOCATION string ((K_NODE node) | (K_ALL K_NODES))? K_SHARED? (
+	K_CREATE K_LOCATION string (( K_NODE node) | ( K_ALL K_NODES))? K_SHARED? (
 		K_USAGE string
 	)? (K_LABEL string)? (K_LIMIT string)?;
 
-create_network_address_statement: todo_statement;
+create_network_address_statement:
+	K_CREATE K_NETWORK K_ADDRESS identifier K_ON node K_WITH address;
 
-create_network_interface_statement: todo_statement;
+create_network_interface_statement:
+	K_CREATE K_NETWORK K_INTERFACE identifier K_ON node K_WITH address;
 
-create_notifier_statement: todo_statement;
+create_notifier_statement:
+	K_CREATE K_NOTIFIER identifier K_ACTION value notifier_params*;
 
-create_procedure_statement: todo_statement;
+create_procedure_statement:
+	K_CREATE K_PROCEDURE procedureReference OPEN_PAREN argument_item (
+		COMMA argument_item
+	)* CLOSE_PAREN K_AS executable = value K_LANGUAGE lang = value K_USER user;
 
-create_profile_statement: todo_statement;
+argument_item: identifier? dataTypes;
+
+create_profile_statement:
+	K_CREATE K_PROFILE name = identifier K_LIMIT password_parameter+;
 
 create_projection_statement: todo_statement;
 
@@ -515,11 +609,13 @@ create_projection_live_aggregate_projections_statement:
 
 create_projection_udtfs_statement: todo_statement;
 
-create_resource_pool_statement: todo_statement;
+create_resource_pool_statement:
+	K_CREATE K_RESOURCE K_POOL identifier resource_pool_param+;
 
-create_role_statement: todo_statement;
+create_role_statement: K_CREATE K_ROLE identifier;
 
-create_routing_rule_statement: todo_statement;
+create_routing_rule_statement:
+	K_CREATE K_ROUTING K_RULE identifier K_ROUTE address K_TO value;
 
 create_schema_statement:
 	K_CREATE K_SCHEMA (K_IF K_NOT K_EXISTS)? schemaReference (
@@ -542,18 +638,140 @@ create_sequence_statement:
 create_subnet_statement:
 	K_CREATE K_SUBNET identifier K_WITH string;
 
-create_table_statement: todo_statement;
+create_table_statement:
+	create_table_default_statement
+	| create_table_as_statement
+	| create_table_like_statement;
 
-create_temporary_table_statement: todo_statement;
+schema_privileges_clause:
+	(( K_INCLUDE | K_EXCLUDE) K_SCHEMA? K_PRIVILEGES);
 
-create_text_index_statement: todo_statement;
+create_table_as_statement:
+	K_CREATE K_TABLE (K_IF K_NOT K_EXISTS) tableReference column_name_list? schema_privileges_clause
+		? K_AS hints? at_epoch_clause? select_query encodedBy_clause?;
 
-create_user_statement: todo_statement;
+column_name_list:
+	OPEN_PAREN column_name_list_item (
+		COMMA column_name_list_item
+	)* CLOSE_PAREN;
+
+column_name_list_item:
+	column encoding_clause? access_rank? grouped_clause?;
+
+access_rank: K_ACCESSRANK number;
+
+grouped_clause:
+	K_GROUPED OPEN_PAREN columnReference (COMMA columnReference)* CLOSE_PAREN;
+
+create_table_like_statement:
+	K_CREATE K_TABLE (K_IF K_NOT K_EXISTS) tableReference K_LIKE tableReference
+		schema_privileges_clause? load_method? schema_privileges_clause??;
+
+create_table_default_statement:
+	K_CREATE K_TABLE (K_IF K_NOT K_EXISTS) tableReference OPEN_PAREN column_definition_list (
+		COMMA table_constraint (COMMA table_constraint)*
+	)? CLOSE_PAREN load_method? orderby_clause? segmentation_clause? (
+		K_KSAFE number
+	)? partition_clause? schema_privileges_clause?;
+
+table_constraint:
+	K_CONSTRAINT identifier (
+		(
+			K_PRIMARY K_KEY OPEN_PAREN column (COMMA column)* CLOSE_PAREN enableOrDisable?
+		)
+		| (
+			(
+				K_FOREIGN K_KEY OPEN_PAREN column (COMMA column)* CLOSE_PAREN K_REFERENCES
+					tableReference (
+					OPEN_PAREN column (COMMA column)* CLOSE_PAREN
+				)?
+			)
+		)
+		| (
+			K_UNIQUE OPEN_PAREN column (COMMA column)* CLOSE_PAREN enableOrDisable?
+		)
+		| (
+			K_CHECK OPEN_PAREN expression CLOSE_PAREN enableOrDisable?
+		)
+	);
+
+column_definition_list:
+	column_definition (COMMA column_definition)*;
+
+column_definition:
+	column dataTypes column_constraint* encoding_clause? access_rank?;
+
+column_constraint:
+	(
+		(K_AUTO_INCREMENT | K_IDENTITY) (
+			OPEN_PAREN value (COMMA value)* CLOSE_PAREN
+		)?
+	)
+	| ( K_CONSTRAINT identifier)
+	| (
+		K_CHECK OPEN_PAREN expression CLOSE_PAREN enableOrDisable?
+	)
+	| (
+		( K_DEFAULT K_USING expression)
+		| ( K_SET K_USING expression)
+		| ( K_DEFAULT K_USING expression)
+	)
+	| ( nullOrNotNull)
+	| (
+		( K_PRIMARY K_KEY enableOrDisable?)
+		| (
+			K_REFERENCES tableReference OPEN_PAREN column (
+				COMMA column
+			)* CLOSE_PAREN
+		)
+	)
+	| ( K_UNIQUE enableOrDisable?);
+
+load_method: K_AUTO | K_DIRECT | K_TRICKLE;
+
+segmentation_clause: todo_statement;
+
+create_temporary_table_statement:
+	create_temporary_table_with_def_statement
+	| create_temporary_table_from_table_statement;
+
+create_temporary_table_with_def_statement:
+	K_CREATE (K_GLOBAL | K_LOCAL)? (K_TEMP | K_TEMPORARY) K_TABLE (
+		K_IF K_NOT K_EXISTS
+	)? tableReference OPEN_PAREN column_definition_list CLOSE_PAREN table_constraint? (
+		K_ON K_COMMIT (K_DELETE | K_PRESERVE) K_ROWS
+	)? load_method? (K_NO K_PROJECTION)? orderby_clause? segmentation_clause? (
+		K_KSAFE number
+	)? (( K_INCLUDE | K_EXCLUDE) K_SCHEMA? K_PRIVILEGES)?;
+
+create_temporary_table_from_table_statement:
+	K_CREATE (K_TEMP | K_TEMPORARY) K_TABLE (K_IF K_NOT K_EXISTS)? tableReference column_name_list?
+		(
+		K_ON K_COMMIT (K_DELETE | K_PRESERVE) K_ROWS
+	)? load_method? K_AS hints? at_epoch_clause? select_query encodedBy_clause?;
+
+encodedBy_clause: K_ENCODED K_BY column_ref ( COMMA column_ref)*;
+
+column_ref: ( column access_rank? encoding_clause?);
+
+create_text_index_statement:
+	K_CREATE K_TEXT K_INDEX txtIndex K_ON tableReference OPEN_PAREN identifier COMMA dataTypes (
+		COMMA column (COMMA column)*
+	)? CLOSE_PAREN (
+		K_STEMMER (
+			identifier (OPEN_PAREN dataTypes CLOSE_PAREN)
+			| K_NONE
+		)
+	)? (
+		K_TOKENIZER identifier (OPEN_PAREN dataTypes CLOSE_PAREN)
+	)?;
+
+create_user_statement: K_CREATE K_USER user user_params*;
 
 create_view_statement:
 	K_CREATE (K_OR K_REPLACE)? K_VIEW identifier (
 		OPEN_PAREN columnReference (COMMA columnReference)* CLOSE_PAREN
-	)? ((K_INCLUDE | K_EXCLUDE) K_SCHEMA? K_PRIVILEGES)? K_AS select_statement;
+	)? (( K_INCLUDE | K_EXCLUDE) K_SCHEMA? K_PRIVILEGES)? K_AS select_statement;
 
 delete_statement:
 	K_DELETE hints? K_FROM tableReference where_clause;
@@ -726,8 +944,11 @@ rollback_to_savepoint_statement:
 
 savepoint_statement: K_SAVEPOINT identifier;
 
+at_epoch_clause:
+	(( K_AT K_EPOCH ( K_LATEST | DECIMAL)) | ( K_AT K_TIME string));
+
 select_statement:
-	(( K_AT K_EPOCH ( K_LATEST | DECIMAL)) | ( K_AT K_TIME string))? select_query (
+	at_epoch_clause? select_query (
 		(K_UNION ( K_ALL | K_DISTINCT)? select_query)
 	)*;
 
@@ -897,6 +1118,25 @@ match_clause:
 		(K_ROWS K_MATCH) (( K_ALL K_EVENTS) | ( K_FIRST K_EVENT))
 	)? CLOSE_PAREN;
 
+partition_clause:
+	K_PARTITION K_BY expression groupBy_clause? (
+		K_ACTIVEPARTITIONCOUNT number
+	)?;
+
+encoding_clause:
+	K_ENCODING (
+		K_AUTO
+		| K_BLOCK_DICT
+		| K_BLOCKDICT_COMP
+		| K_BZIP_COMP
+		| K_COMMONDELTA_COMP
+		| K_DELTARANGE_COMP
+		| K_DELTAVAL
+		| K_GCDDELTA
+		| K_GZIP_COMP
+		| K_RLE
+	);
+
 orderbyItem: expression ( K_ASC | K_DESC)?;
 
 predicates: predicate ( ( K_AND | K_OR) predicate)*;
@@ -1004,9 +1244,9 @@ notifierParam:
 	K_NO K_CHECK K_COMMITTED (K_ENABLE | K_DISABLE) K_IDENTIFIED K_BY identifier K_MAXMEMORYSIZE
 		identifier K_MAXPAYLOAD identifier K_PARAMETERS identifier;
 
-keyValuePairs: keyValuePair ( COMMA keyValuePair)*;
+commaSeparatedKeyValuePairs: keyValuePair ( COMMA keyValuePair)*;
 
-keyValuePair: identifier operator identifier;
+keyValuePair: param operator value;
 
 hints: OPEN_HINT hint ( COMMA hint)* CLOSE_HINT;
 
@@ -1025,14 +1265,14 @@ hint:
 	| ( K_UTYPE OPEN_PAREN ( identifier) CLOSE_PAREN)
 	| (
 		K_PROJS OPEN_PAREN (
-			(( schemaReference DOT)? identifier) (
+			projectionReference (
 				COMMA (( schemaReference DOT)? identifier)
 			)
 		) CLOSE_PAREN
 	)
 	| (
 		K_SKIP_PROJS OPEN_PAREN (
-			(( schemaReference DOT)? identifier) (
+			projectionReference (
 				COMMA (( schemaReference DOT)? identifier)
 			)
 		) CLOSE_PAREN
@@ -1047,30 +1287,84 @@ tableReference: ( ( dbname DOT)? ( schema DOT))? table;
 
 projectionReference:
 	(( ( dbname DOT)? ( schema DOT))? table DOT)? projection;
+
+procedureReference:
+	(( ( dbname DOT)? ( schema DOT))? table DOT)? procedure;
+
+procedure: identifier;
+
 functionReference: ( ( dbname DOT)? ( schema DOT))? function;
+
 libraryReference: ( ( dbname DOT)? ( schema DOT))? library;
+
 sequenceReference: ( ( dbname DOT)? ( schema DOT))? sequence;
+
+modelReference: ( ( dbname DOT)? ( schema DOT))? model;
+txtIndexReference: ( ( dbname DOT)? ( schema DOT))? txtIndex;
 
 schemaReference: ( dbname DOT)? schema;
 
 dbname: identifier;
+txtIndex: identifier;
+model: identifier;
 
 schema: identifier;
+
 table: identifier;
 
+params: param ( COMMA param)*;
+
 projection: identifier;
+
 library: identifier;
+
 function: identifier | aggregateFunction;
+
 node: identifier;
+
 sequence: identifier;
+
 column: identifier;
+
 interval: string;
+
 entities: identifier ( COMMA identifier)*;
+
 string: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
 
+param: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
 number: DECIMAL | FLOAT | REAL;
+
 asteriskExp: STAR;
-identifier: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
+user: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
+owner: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
+method: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
+faultGroup: WORD | DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING;
+
+identifier:
+	WORD
+	| DOUBLE_QUOTE_STRING
+	| SINGLE_QUOTE_STRING
+	| K_DEFAULT;
+
+enableOrDisable: ( K_ENABLE | K_DISABLE);
+
+nullOrNotNull: K_NOT? K_NULL;
+
+value:
+	WORD
+	| DOUBLE_QUOTE_STRING
+	| SINGLE_QUOTE_STRING
+	| DECIMAL
+	| FLOAT
+	| REAL;
+
+address: IPV4_ADDR | IPV6_ADDR;
 
 password_parameter:
 	(
@@ -1087,7 +1381,7 @@ password_parameter:
 		| K_PASSWORD_MIN_LOWERCASE_LETTERS
 		| K_PASSWORD_MIN_DIGITS
 		| K_PASSWORD_MIN_SYMBOLS
-	);
+	) value;
 
 operator: comparisonOperator;
 
@@ -1152,6 +1446,7 @@ isolationLevel:
 	| ( K_READ K_UNCOMMITTED);
 
 transactionMode: K_READ ( K_ONLY | K_WRITE)?;
+
 reservedWords:
 	K_ALL
 	| K_AND
@@ -1302,6 +1597,7 @@ reservedWords:
 	| K_WINDOW
 	| K_WITH
 	| K_WITHIN;
+
 bool_expression: K_TRUE | K_FALSE;
 
 arglist: OPEN_PAREN ( dataTypes ( COMMA dataTypes)*)? CLOSE_PAREN;
@@ -1360,3 +1656,4 @@ eNumericTypes:
 spatialTypes: K_GEOMETRY | K_GEOGRAPHY;
 
 uuidTypes: K_UUID;
+
