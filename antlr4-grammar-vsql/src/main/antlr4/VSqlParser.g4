@@ -794,7 +794,12 @@ drop_authentication_statement:
 		K_CASCADE
 	)?;
 
-drop_branch_statement: todo_statement;
+drop_branch_statement: 
+K_DROP K_BRANCH (K_IF K_EXISTS)? (branch_identifier) (
+		COMMA branch_identifier
+	)* K_CASCADE?
+
+;
 
 drop_fault_group_statement:
 	K_DROP K_FAULT K_GROUP (K_IF K_EXISTS) identifier;
@@ -819,9 +824,11 @@ drop_model_statement:
 drop_library_statement:
 	K_DROP K_LIBRARY (K_IF K_EXISTS)? (schemaReference DOT)? identifier K_CASCADE?;
 
-drop_load_balance_group_statement: todo_statement;
+drop_load_balance_group_statement: K_DROP K_LOAD K_BALANCE K_GROUP identifier K_CASCADE?
+;
 
-drop_network_address_statement: todo_statement;
+drop_network_address_statement: K_DROP K_LOAD K_NETWORK K_ADDRESS identifier K_CASCADE?
+;
 
 drop_network_interface_statement:
 	K_NETWORK K_INTERFACE (K_IF K_EXISTS)? (schemaReference DOT)? identifier K_CASCADE?;
@@ -847,7 +854,8 @@ drop_resource_pool_statement:
 drop_role_statement:
 	K_DROP K_ROLE (K_IF K_EXISTS)? entities K_CASCADE?;
 
-drop_routing_rule_statement: todo_statement;
+drop_routing_rule_statement: K_DROP K_ROUTING K_RULE identifier
+;
 
 drop_schema_statement:
 	K_DROP K_SCHEMA (K_IF K_EXISTS)? (dbname DOT)? entities K_CASCADE?;
