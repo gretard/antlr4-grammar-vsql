@@ -1300,7 +1300,7 @@ grant_authentication_statement:
 insert_statement:
 	K_INSERT hints? K_INTO tableReference columns? (
 		( K_DEFAULT K_VALUES)
-		| ( K_VALUES OPEN_PAREN values CLOSE_PAREN)
+		| ( K_VALUES OPEN_PAREN expressions CLOSE_PAREN)
 		| select_statement
 	);
 
@@ -1586,7 +1586,7 @@ show_session_statement:
 	K_SHOW K_SESSION (K_ALL | ( K_UDPARAMETERS K_ALL) | params);
 
 start_transaction_statement:
-	K_START K_TRANSACTION K_ISOLATION K_LEVEL isolationLevel transactionMode;
+	K_START K_TRANSACTION (K_ISOLATION K_LEVEL isolationLevel  transactionMode)?;
 
 truncate_table_statement: K_TRUNCATE K_TABLE tableReference;
 
@@ -1871,13 +1871,13 @@ lang: string;
 
 resourcePool: id;
 
-schema: id;
+schema: id | K_PUBLIC;
 
 table: id;
 params: param ( COMMA param)*;
 projection: id;
 library: id;
-function: (id)+ | K_HASH; 
+function: (id)+ | K_HASH | K_ROLLUP; 
 param: id;
 
 node: id;
