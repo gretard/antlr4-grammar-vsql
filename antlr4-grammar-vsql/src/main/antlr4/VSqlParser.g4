@@ -1695,13 +1695,13 @@ elements: element ( COMMA element)*;
 
 element: ( expression alias?) | asteriskExp;
 
-expressions: (expression | predicates) ( COMMA (expression | predicates))*;
+expressions: (expression) ( COMMA (expression))*;
 castExpr: DCOLON dataTypes ;
 expression:
 	(
-		OPEN_PAREN (
-			expression | (expression operator expression)
-		) CLOSE_PAREN  castExpr?
+		OPEN_PAREN 
+			(expression (operator expression)* )
+		 CLOSE_PAREN  castExpr?
 	)
 	| (
 		(
@@ -1711,7 +1711,8 @@ expression:
 			| caseExp
 			| select_query
 			| value
-		) castExpr?
+		
+		) (operator expression)* castExpr?
 	);
 
 predicate:
@@ -1724,19 +1725,19 @@ predicate:
 	| nullPredicate;
 
 nullPredicate:
-	(columnReference | functionCall) K_IS nullOrNotNull;
+	expression K_IS nullOrNotNull;
 
 likePredicate:
-	columnReference K_NOT? (
+	expression K_NOT? (
 		K_LIKE
 		| K_ILIKE
 		| K_LIKEB
 		| K_ILIKEB
-	) value (K_ESCAPE value)?;
+	) expression (K_ESCAPE value)?;
 
 joinPredicate:
-	K_ON columnReference comparisonOperator columnReference (
-		(K_AND | K_OR | K_NOT) columnReference comparisonOperator columnReference
+	K_ON columnReference comparisonOperator expression (
+		(K_AND | K_OR | K_NOT) columnReference comparisonOperator expression
 	)*;
 
 interpolatePredicate:
@@ -1746,12 +1747,7 @@ columnValuePredicate:
 	expression operator expression;
 
 inPredicate:
-	columnReference (COMMA columnReference)* K_IN K_NOT? inPredicateValues (
-		COMMA inPredicateValues
-	)*;
-
-inPredicateValues:
-	OPEN_PAREN (expression | inPredicateValues) CLOSE_PAREN;
+	columns K_IN K_NOT? OPEN_PAREN expressions CLOSE_PAREN;
 
 constantExp: number | string ( K_IS nullOrNotNull);
 
@@ -1953,7 +1949,10 @@ comparisonOperator:
 	| GTE
 	| LT_GT
 	| BANG_EQUAL
-	| EQUAL2;
+	| EQUAL2
+	| DIV
+	|STAR
+	;
 
 isolationLevel:
 	(K_READ K_COMMITTED)
