@@ -477,10 +477,9 @@ connect_statement:
 	K_CONNECT K_TO K_VERTICA dbname K_USER user K_PASSWORD value K_ON host COMMA
 		port (K_TLSMODE K_PREFER)?;
 
-column_as_expression: column K_AS expression;
 
 copy_column:
-	(column | column_as_expression) (K_DELIMITER K_AS? value)? (
+	(column ( K_AS expression)?) (K_DELIMITER K_AS? value)? (
 		K_ENCLOSED K_BY? value
 	)? K_ENFORCELENGTH? (
 		( K_ESCAPE K_AS? value)
@@ -1701,7 +1700,7 @@ castExpr: DCOLON dataTypes ;
 expression:
 	(
 		OPEN_PAREN (
-			expression
+			expression | (expression operator expression)
 		) CLOSE_PAREN  castExpr?
 	)
 	| (
@@ -1711,7 +1710,6 @@ expression:
 			| columnReference
 			| caseExp
 			| select_query
-			| (operator expression)
 			| value
 		) castExpr?
 	);
