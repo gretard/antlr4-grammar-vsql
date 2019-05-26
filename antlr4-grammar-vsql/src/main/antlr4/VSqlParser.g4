@@ -794,8 +794,8 @@ create_profile_statement:
 	K_CREATE K_PROFILE profile K_LIMIT password_parameter+;
 
 projection_clause_item:
-	(column | grouped_clause) encoding_clause? access_rank?;
-profile: id;
+	(columnReference | grouped_clause) encoding_clause? access_rank?;
+
 ksafe_clause: K_KSAFE integerNumber?;
 
 ifNotExistsClause: K_IF K_NOT? K_EXISTS;
@@ -941,7 +941,7 @@ column_definition_list:
 	column_definition (COMMA column_definition)*;
 
 column_definition:
-	column dataTypes column_constraint* encoding_clause? access_rank?;
+	column dataTypes  column_constraint* encoding_clause? access_rank?;
 
 column_constraint:
 	(
@@ -965,7 +965,10 @@ column_constraint:
 			K_REFERENCES tableReference columns
 		)
 	)
-	| ( K_UNIQUE enableOrDisable?);
+	| ( K_UNIQUE enableOrDisable?)
+	| ( K_DEFAULT expression)
+	
+	;
 
 load_method: K_AUTO | K_DIRECT | K_TRICKLE;
 
@@ -1893,6 +1896,7 @@ faultGroup: id;
 auth_method_name: id;
 constraint: id;
 network_interface: id;
+profile: id;
 id:
 	WORD
 	| DOUBLE_QUOTE_STRING
@@ -1965,14 +1969,14 @@ bool_expression: K_TRUE | K_FALSE;
 
 
 dataTypes:
-	binaryTypes
+	(binaryTypes
 	| booleanTypes
 	| charTypes
 	| dateTypes
 	| apNumericTypes
 	| eNumericTypes
 	| spatialTypes
-	| uuidTypes;
+	| uuidTypes ) (OPEN_PAREN value CLOSE_PAREN)?;
 
 binaryTypes:
 	K_BINARY
