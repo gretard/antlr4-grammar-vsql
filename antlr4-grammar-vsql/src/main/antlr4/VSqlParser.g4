@@ -10,7 +10,7 @@ options {
 }
 
 
-root: ( statement SEMI)* EOF?;
+root: ( statement? SEMI)* EOF?;
 
 statement:
 	(
@@ -148,11 +148,10 @@ statement:
 		| start_transaction_statement
 		| truncate_table_statement
 		| update_statement
-		| empty_statement
+	
 	);
 
 
-empty_statement: SEMI;
 
 alter_access_policy_statement:
 	K_ALTER K_ACCESS K_POLICY K_ON tableReference (
@@ -1599,7 +1598,7 @@ select_query:
 	select_clause into_clause? from_clause? where_clause? timeseries_clause? groupBy_clause?
 		having_clause? match_clause? (
 		K_UNION ( K_ALL | K_DISTINCT)?
-	)? except_clause? intersect_clause? orderby_clause? limit_clause?offset_clause? (
+	)? except_clause? intersect_clause? orderby_clause? limit_clause? offset_clause? (
 		K_FOR K_UPDATE (
 			K_OF tableReference (COMMA tableReference)*
 		)?
@@ -1877,7 +1876,7 @@ table: id;
 params: param ( COMMA param)*;
 projection: id;
 library: id;
-function: (id)+ | K_HASH | K_ROLLUP; 
+function: K_HASH | K_ROLLUP | (id)+ ; 
 param: id;
 
 node: id;
@@ -1901,7 +1900,9 @@ id:
 	WORD
 	| DOUBLE_QUOTE_STRING
 	| SINGLE_QUOTE_STRING
-	| K_DEFAULT;
+	| K_DEFAULT
+	| ~SEMI
+	;
 
 value:
 	WORD
@@ -1911,6 +1912,7 @@ value:
 	| FLOAT
 	| REAL
 	| ANY
+	| ~SEMI
 	;
 
 enableOrDisable: ( K_ENABLE | K_DISABLE);
@@ -1976,7 +1978,7 @@ dataTypes:
 	| apNumericTypes
 	| eNumericTypes
 	| spatialTypes
-	| uuidTypes ) (OPEN_PAREN value CLOSE_PAREN)?;
+	| uuidTypes ) (OPEN_PAREN value (COMMA value)? CLOSE_PAREN)?;
 
 binaryTypes:
 	K_BINARY
