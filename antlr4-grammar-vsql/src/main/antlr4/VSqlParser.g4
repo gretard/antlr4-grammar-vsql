@@ -155,9 +155,9 @@ statement:
 
 alter_access_policy_statement:
 	K_ALTER K_ACCESS K_POLICY K_ON tableReference (
-		( K_FOR K_COLUMN columnReference predicates)
+		( K_FOR K_COLUMN columnReference predicates?)
 		| ( K_FOR K_ROWS where_clause?)
-	) (enableOrDisable | ( K_COPY K_TO K_TABLE tableReference));
+	) (enableOrDisable | ( K_COPY K_TO K_TABLE tableReference))?;
 
 
 alter_authentication_statement:
