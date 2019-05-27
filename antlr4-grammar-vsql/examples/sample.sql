@@ -1,9 +1,7 @@
 ALTER TABLE t01 ADD CONSTRAINT sampleconstraint PRIMARY KEY(id);
 
-ALTER ACCESS POLICY ON public.customer_dimension FOR COLUMN customer_address 
-    CASE WHEN test('test') THEN customer_address
-         WHEN test('test2') THEN customer_address 
-         ELSE '**************' END ENABLE;
+ALTER ACCESS POLICY ON public.customer_dimension FOR COLUMN customer_address;
+
 ALTER AUTHENTICATION Ldap1 SET host='ldap://172.16.65.177',
    binddn_prefix='cn=', binddn_suffix=',dc=qa_domain,dc=com';         
 ALTER AUTHENTICATION localpwd METHOD 'trust';
@@ -16,7 +14,7 @@ ALTER ACCESS POLICY ON customer FOR COLUMN test COPY TO TABLE test;
 
 ALTER FAULT GROUP parent0 RENAME TO parent100;
 
-ALTER FUNCTION SQL_one (a,b) RENAME TO SQL_two;
+ALTER FUNCTION SQL_one (int,int) RENAME TO SQL_two;
 
 ALTER FUNCTION SQL_two (int, int) SET SCHEMA macros;
 
@@ -59,7 +57,7 @@ ALTER PROFILE sample_profile RENAME TO new_sample_profile;
  
  ALTER SESSION CLEAR UDPARAMETER FOR MyLibrary RowCount;
  
- ALTER SESSION CLEAR UDPARAMETER FOR MyLibrary;
+ ALTER SESSION CLEAR UDPARAMETER FOR MyLibrary sss;
  
  ALTER SUBNET mysubnet RENAME TO myNewSubnet;
  

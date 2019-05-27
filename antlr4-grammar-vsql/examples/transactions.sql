@@ -1,0 +1,12 @@
+start transaction;
+ insert into test.agg_event_by_client_geo_day values (20140601, 1, 'US', 1000, 2000, 30000, 60000, now() - RANDOM(), 1001);
+ insert into test.agg_event_by_client_geo_day values (20140601, 1, 'US', 1000, 2000, 30000, 60000, now() - RANDOM(), 1001);
+ insert into test.agg_event_by_client_geo_day values (20140601, 1, 'GB', 1001, 2000, 30000, 60000, now() - RANDOM(), 1001);
+ insert into test.agg_event_by_client_geo_day values (20140601, 2, 'GB', 1002, 2000, 30000, 60000, now() - RANDOM(), 1002);
+ insert into test.agg_event_by_client_geo_day values (20140601, 2, 'GB', 1002, 2000, 30000, 60000, now() - RANDOM(), 1002);
+ insert into test.agg_event_by_client_geo_day values (20140602, 1, 'US', 1000, 2000, 30000, 60000, now() - RANDOM(), 1002);
+ insert into test.agg_event_by_client_geo_day values (20140602, 1, 'US', 1000, 2000, 30000, 60000, now() - RANDOM(), 1002);
+ insert into test.agg_event_by_client_geo_day values (20140602, 1, 'US', 1001, 2000, 30000, 60000, now() - RANDOM(), 1003);
+ insert into test.agg_event_by_client_geo_day values (20140602, 2, 'GB', 1002, 2000, 30000, 60000, now() - RANDOM(), 1003);
+ insert into test.agg_event_by_client_geo_day values (20140602, 2, 'GB', 1002, 2000, 30000, 60000, now() - RANDOM(), 1003);
+ commit;
