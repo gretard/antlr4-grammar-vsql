@@ -591,8 +591,8 @@ create_branch_statement:
 
 
 create_external_table_as_copy_statement:
-	K_CREATE K_EXTERNAL K_TABLE (K_IF K_NOT K_EXISTS)? tableReference OPEN_PAREN
-		column_definition_list CLOSE_PAREN schema_privileges_clause? K_AS K_COPY (
+	K_CREATE K_EXTERNAL K_TABLE (K_IF K_NOT K_EXISTS)? tableReference 
+		column_definition_list  schema_privileges_clause? K_AS K_COPY (
 		OPEN_PAREN copy_column (COMMA copy_column)* CLOSE_PAREN
 	)? (
 		K_COLUMN K_OPTION (
@@ -639,16 +639,16 @@ create_fault_group_statement:
 	K_CREATE K_FAULT K_GROUP id;
 
 create_flex_table_statement:
-	K_CREATE (K_FLEX | K_FLEXIBLE) K_TABLE (K_IF K_NOT K_EXISTS)? tableReference (
-		(OPEN_PAREN column_definition_list CLOSE_PAREN)
+	K_CREATE (K_FLEX | K_FLEXIBLE) K_TABLE (K_IF K_NOT K_EXISTS)? tableReference 
+		(column_definition_list
 		| column_name_list
 	) schema_privileges_clause? orderby_clause? encodedBy_clause? segmentation_clause? ksafe_clause?
 		partition_clause? (K_AS select_statement)?;
 
 
 create_flex_external_table_as_copy_statement:
-	K_CREATE (K_FLEX | K_FLEXIBLE) K_EXTERNAL K_TABLE ifNotExistsClause? tableReference OPEN_PAREN
-		column_definition_list CLOSE_PAREN schema_privileges_clause? K_AS K_COPY (
+	K_CREATE (K_FLEX | K_FLEXIBLE) K_EXTERNAL K_TABLE ifNotExistsClause? tableReference 
+		column_definition_list schema_privileges_clause? K_AS K_COPY (
 		OPEN_PAREN copy_column (COMMA copy_column)* CLOSE_PAREN
 	)? (
 		K_FROM path (compressionType ( COMMA compressionType)*)? K_WITH? (
@@ -890,12 +890,13 @@ schema_privileges_clause:
 
 create_table_as_statement:
 	K_CREATE K_TABLE ifNotExistsClause? tableReference column_name_list? schema_privileges_clause
-		? K_AS hints? at_epoch_clause? select_query encodedBy_clause?;
+		? K_AS hints? select_statement encodedBy_clause?;
+
 
 column_name_list:
-	OPEN_PAREN column_name_list_item (
+	OPEN_PAREN (column_name_list_item (
 		COMMA column_name_list_item
-	)* CLOSE_PAREN;
+	)*)? CLOSE_PAREN;
 
 column_name_list_item:
 	column encoding_clause? access_rank? grouped_clause?;
@@ -910,9 +911,9 @@ create_table_like_statement:
 		schema_privileges_clause? load_method? schema_privileges_clause??;
 
 create_table_default_statement:
-	K_CREATE K_TABLE ifNotExistsClause? tableReference OPEN_PAREN column_definition_list (
+	K_CREATE K_TABLE ifNotExistsClause? tableReference column_definition_list (
 		COMMA table_constraint (COMMA table_constraint)*
-	)? CLOSE_PAREN load_method? orderby_clause? segmentation_clause? ksafe_clause? partition_clause?
+	)?  load_method? orderby_clause? segmentation_clause? ksafe_clause? partition_clause?
 		schema_privileges_clause?;
 
 table_constraint:
@@ -937,7 +938,7 @@ table_constraint:
 	);
 
 column_definition_list:
-	column_definition (COMMA column_definition)*;
+	OPEN_PAREN (column_definition (COMMA column_definition)*)? CLOSE_PAREN;
 
 column_definition:
 	column dataTypes  column_constraint* encoding_clause? access_rank?;
@@ -984,7 +985,7 @@ create_temporary_table_statement:
 
 create_temporary_table_with_def_statement:
 	K_CREATE (K_GLOBAL | K_LOCAL)? (K_TEMP | K_TEMPORARY) K_TABLE ifNotExistsClause? 
-	tableReference OPEN_PAREN column_definition_list CLOSE_PAREN table_constraint? (
+	tableReference  column_definition_list  table_constraint? (
 		K_ON K_COMMIT (K_DELETE | K_PRESERVE) K_ROWS
 	)? load_method? (K_NO K_PROJECTION)? orderby_clause? segmentation_clause? ksafe_clause?
 		schema_privileges_clause?;
@@ -1476,9 +1477,9 @@ at_epoch_clause:
 	(( K_AT K_EPOCH ( K_LATEST | DECIMAL)) | ( K_AT K_TIME string));
 
 select_statement:
-	at_epoch_clause? select_query (
+	(OPEN_PAREN select_statement CLOSE_PAREN) | (at_epoch_clause? select_query (
 		(K_UNION ( K_ALL | K_DISTINCT)? select_query)
-	)*;
+	)*)  ;
 
 set_datestyle_statement:
 	K_SET K_DATESTYLE K_TO (
@@ -1767,7 +1768,7 @@ caseExp:
 alias: ( K_AS? id);
 
 functionCall:
-	function OPEN_PAREN (( K_ALL | K_DISTINCT)? elements)? CLOSE_PAREN;
+	function OPEN_PAREN (( STAR? K_USING K_PARAMETERS)? ( K_ALL | K_DISTINCT)? elements)? CLOSE_PAREN;
 
 commaSeparatedKeyValuePairs: (keyValuePair ( COMMA keyValuePair)*) 
 | (
@@ -1901,6 +1902,7 @@ id:
 	| DOUBLE_QUOTE_STRING
 	| SINGLE_QUOTE_STRING
 	| K_DEFAULT
+	| PARAM
 	| ~SEMI
 	;
 
@@ -1912,6 +1914,7 @@ value:
 	| FLOAT
 	| REAL
 	| ANY
+	| PARAM
 	| ~SEMI
 	;
 
@@ -1946,6 +1949,7 @@ operator: comparisonOperator;
 
 comparisonOperator:
 	EQUAL
+	|DPIPE
 	| EQUAL_GT
 	| GT
 	| LT
@@ -1978,7 +1982,9 @@ dataTypes:
 	| apNumericTypes
 	| eNumericTypes
 	| spatialTypes
-	| uuidTypes ) (OPEN_PAREN value (COMMA value)? CLOSE_PAREN)?;
+	| uuidTypes
+	| otherTypes
+	 ) (OPEN_PAREN value (COMMA value)? CLOSE_PAREN)?;
 
 binaryTypes:
 	K_BINARY
@@ -2024,4 +2030,6 @@ eNumericTypes:
 spatialTypes: K_GEOMETRY | K_GEOGRAPHY;
 
 uuidTypes: K_UUID;
+
+otherTypes: K_IDENTITY;
 

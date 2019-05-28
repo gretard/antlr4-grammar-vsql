@@ -709,7 +709,7 @@ LT: '<';
 LTE: '<=';
 LT_GT: '<>';
 DIV: '/';	
-
+DPIPE: '||';
 
 //other
 
@@ -726,9 +726,10 @@ SPACE: [ \t\r\n]+ -> skip;
 
 // comments
 
-COMMENT: '/*' ( ~'+') ( COMMENT | .)*? '*/' -> channel ( HIDDEN );
+COMMENT: '/*' ~'+' ( COMMENT | .)*? '*/' -> channel ( HIDDEN );
 
-LINE_COMMENT_LITERAL: '--' ~[\r\n]* -> channel ( HIDDEN );
+LINE_COMMENT: '--' ~[\r\n]* -> channel ( HIDDEN );
+COMMAND: ('\\' (.)*? ';'[\r\n]) -> channel ( HIDDEN );
 
 OPEN_HINT: '/*+';
 CLOSE_HINT: '*/';
@@ -737,10 +738,10 @@ CLOSE_HINT: '*/';
 
 DOUBLE_QUOTE_STRING: '"' ~'"'* '"';
 
-
+PARAM: ':' [\p{Alnum}\p{General_Category=Other_Letter}_]+;
 
 WORD:
-	[\p{Alpha}\p{General_Category=Other_Letter}] [\p{Alnum}\p{General_Category=Other_Letter}_]*;
+	[\p{Alpha}\p{General_Category=Other_Letter}_] [\p{Alnum}\p{General_Category=Other_Letter}_]*;
 
 SINGLE_QUOTE_STRING: '\'' ( ~'\'' | '\'\'')* '\'';
 
