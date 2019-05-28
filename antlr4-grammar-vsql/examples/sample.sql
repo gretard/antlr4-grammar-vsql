@@ -2,8 +2,8 @@ ALTER TABLE t01 ADD CONSTRAINT sampleconstraint PRIMARY KEY(id);
 
 ALTER ACCESS POLICY ON public.customer_dimension FOR COLUMN customer_address;
 
-ALTER AUTHENTICATION Ldap1 SET host='ldap://172.16.65.177',
-   binddn_prefix='cn=', binddn_suffix=',dc=qa_domain,dc=com';         
+ALTER AUTHENTICATION Ldap1 SET host='ldap://172.16.65.177', binddn_prefix='cn=', binddn_suffix=',dc=qa_domain,dc=com';
+         
 ALTER AUTHENTICATION localpwd METHOD 'trust';
 
 ALTER AUTHENTICATION ident1 SET system_users='user1';
