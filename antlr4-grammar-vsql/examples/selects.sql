@@ -14,3 +14,10 @@ MATCH
      Entry    AS RefURL  NOT ILIKE 'hhh',     Onsite   AS PageURL ILIKE     's'   PATTERN
      P AS (EntryOnsitePurchase)
    ROWS MATCH FIRST EVENT);
+   
+   
+SELECT STV_SetExportShapefileDirectory(USING PARAMETERS path = '/home/shapefiles');
+
+
+CREATE VIEW titanic_testing_encoded AS (SELECT passenger_id, name, pclass, sex_1, age, sibling_and_spouse_count, parent_and_child_count, fare, embarkation_point_1, embarkation_point_2 FROM\r\n" + 
+    			"    (SELECT APPLY_ONE_HOT_ENCODER(* USING PARAMETERS model_name='public.titanic_encoder') FROM titanic_testing) AS sq;   

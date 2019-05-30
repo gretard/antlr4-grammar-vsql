@@ -1,9 +1,5 @@
 parser grammar VSqlParser;
 
-@header {
-  package org.antlr4.vsql;
-}
-
 options {
 	tokenVocab = VSqlLexer;
 }
@@ -508,7 +504,31 @@ udl_clause:
 	(K_SOURCE sourceReference commaSeparatedKeyValuePairs?)
 	| (K_FILTER filterReference commaSeparatedKeyValuePairs?)
 	| (K_PARSER parserReference commaSeparatedKeyValuePairs?);
-
+copy_statement_option:
+	(K_DELIMITER K_AS? string)
+	| (K_TRAILING K_NULLCOLS)
+	| ( K_NULL K_AS? string)
+	| (( K_ESCAPE K_AS string) | ( K_NO K_ESCAPE))
+	| ( K_ENCLOSED K_BY? string)
+	| (K_RECORD K_TERMINATOR string)
+	| (K_SKIP number)
+	| ( K_SKIP K_BYTES number)
+	| (K_TRIM value)
+	| (K_REJECTMAX number)
+	| (
+		K_REJECTED K_DATA (
+			( string ( K_ON node)*)
+			| ( K_AS K_TABLE id)
+		)
+	)
+	| (K_EXCEPTIONS string ( K_ON node)*)
+	| (K_ENFORCELENGTH)
+	| ( K_ERROR K_TOLERANCE)
+	| (K_ABORT K_ON K_ERROR)
+	| (K_STORAGE? load_method)
+	| ( K_STREAM K_NAME value)
+	| (K_NO K_COMMIT)
+;
 copy_statement:
 	K_COPY tableReference (
 		OPEN_PAREN copy_column (COMMA copy_column)* CLOSE_PAREN
@@ -524,25 +544,9 @@ copy_statement:
 			| vertica_source
 			| tableReference
 		)
-	)? (K_WITH? udl_clause+)? (K_DELIMITER K_AS? string)? (
-		K_TRAILING K_NULLCOLS
-	)? (K_NULL K_AS? string)? (
-		( K_ESCAPE K_AS string)
-		| ( K_NO K_ESCAPE)
-	)? (K_ENCLOSED K_BY? string)? (K_RECORD K_TERMINATOR string)? (
-		K_SKIP number
-	)? (K_SKIP K_BYTES number)? (K_TRIM value)? (
-		K_REJECTMAX number
-	)? (
-		K_REJECTED K_DATA (
-			( string ( K_ON node)*)
-			| ( K_AS K_TABLE id)
-		)
-	)? (K_EXCEPTIONS string ( K_ON node)*)? (K_ENFORCELENGTH)? (
-		K_ERROR K_TOLERANCE
-	)? (K_ABORT K_ON K_ERROR)? (K_STORAGE? load_method)? (
-		K_STREAM K_NAME value
-	)? (K_NO K_COMMIT)?;
+	)? (K_WITH? udl_clause+)? 
+	copy_statement_option*
+	;
 
 copy_local_statement: copy_statement;
 
@@ -682,8 +686,11 @@ create_or_replace_udf_function_statement:
 
 create_or_replace_sql_function_statement:
 	K_CREATE (K_OR K_REPLACE)? K_FUNCTION functionReference argument_list K_RETURN dataTypes K_AS
-		K_BEGIN K_RETURN expression K_END;
-
+	expreDefininition
+	;
+expreDefininition: 
+	K_BEGIN K_RETURN expression SEMI? K_END
+;
 create_or_replace_filter_statement:
 	K_CREATE (K_OR K_REPLACE)? K_FILTER functionReference K_AS (
 		K_LANGUAGE lang
@@ -757,7 +764,7 @@ create_procedure_statement:
 		K_USER user;
 
 argument_list:
-	OPEN_PAREN argument_item? (COMMA argument_item)* CLOSE_PAREN;
+	OPEN_PAREN (argument_item (COMMA argument_item)*)? CLOSE_PAREN;
 
 argument_item: id? dataTypes;
 
@@ -907,7 +914,7 @@ column_definition_list:
 	OPEN_PAREN (column_definition (COMMA column_definition)*)? CLOSE_PAREN;
 
 column_definition:
-	column dataTypes column_constraint* encoding_clause? access_rank?;
+	column dataTypes? column_constraint* encoding_clause? access_rank?;
 
 column_constraint:
 	(
@@ -976,8 +983,8 @@ create_text_index_statement:
 create_user_statement: K_CREATE K_USER user user_params*;
 
 create_view_statement:
-	K_CREATE (K_OR K_REPLACE)? K_VIEW viewReference columns schema_privileges_clause? K_AS
-		select_statement;
+	K_CREATE (K_OR K_REPLACE)? K_VIEW viewReference columns? schema_privileges_clause? K_AS
+		select_statement alias?;
 
 delete_statement:
 	K_DELETE hints? K_FROM tableReference where_clause?;
@@ -1114,7 +1121,7 @@ drop_user_statement:
 drop_view_statement:
 	K_DROP K_VIEW ifNotExistsClause? viewReference (
 		COMMA viewReference
-	);
+	)*;
 
 end_statement: K_END ( K_WORK | K_TRANSACTION)?;
 
@@ -1593,8 +1600,11 @@ timeseries_clause:
 	K_TIMESERIES columnReference alias over_clause K_ORDER K_BY columns;
 
 over_clause:
-	K_OVER OPEN_PAREN (K_PARTITION K_BY columns)? orderby_clause? CLOSE_PAREN;
-
+	K_OVER OPEN_PAREN (K_PARTITION K_BY columns)?
+	orderby_clause? CLOSE_PAREN as_over_clause?;
+as_over_clause:
+ K_AS columns
+;
 groupBy_clause: K_GROUP K_BY hints? expressions;
 
 having_clause: K_HAVING expressions;
@@ -1654,7 +1664,8 @@ joinedTable:
 
 elements: element ( COMMA element)*;
 
-element: ( expression alias?) | asteriskExp;
+element: (( expression alias?) | asteriskExp ) 
+;
 
 expressions: (expression) ( COMMA (expression))*;
 castExpr: DCOLON dataTypes;
@@ -1664,7 +1675,8 @@ expression:
 	)
 	| (
 		(
-			functionCall
+			number
+			| functionCall
 			| columnReference
 			| caseExp
 			| select_query
@@ -1718,9 +1730,15 @@ alias: ( K_AS? id);
 
 functionCall:
 	function OPEN_PAREN (
-		(STAR? K_USING K_PARAMETERS)? (K_ALL | K_DISTINCT)? elements
+		(K_ALL | K_DISTINCT)? elementWithUsing (COMMA elementWithUsing)*
 	)? CLOSE_PAREN over_clause?;
-
+elementWithUsing:
+usingClause | (element usingClause?)
+;
+usingClause:
+(K_USING K_PARAMETERS commaSeparatedKeyValuePairs
+)
+;
 commaSeparatedKeyValuePairs:
 	(OPEN_PAREN commaSeparatedKeyValuePairs? CLOSE_PAREN)
 	| (keyValuePair ( COMMA keyValuePair)*);
@@ -1809,12 +1827,12 @@ lang: string;
 resourcePool: id;
 
 schema: id | K_PUBLIC;
-
+udParam: PARAM;
 table: id;
 params: param ( COMMA param)*;
 projection: id;
 library: id;
-function: K_HASH | K_ROLLUP | (id)+;
+function: K_HASH | K_ROLLUP | id;
 param: id;
 
 node: id;
@@ -1835,23 +1853,26 @@ constraint: id;
 network_interface: id;
 profile: id;
 id:
-	WORD
-	| DOUBLE_QUOTE_STRING
+	 DOUBLE_QUOTE_STRING
 	| SINGLE_QUOTE_STRING
+	| WORD
 	| K_DEFAULT
-	| PARAM
-	| ~SEMI;
+	| PARAM	
+	| ~SEMI
+;
+
 
 value:
-	WORD
-	| DOUBLE_QUOTE_STRING
-	| SINGLE_QUOTE_STRING
-	| DECIMAL
+      DECIMAL
 	| FLOAT
 	| REAL
+	| WORD
+	| DOUBLE_QUOTE_STRING
+	| SINGLE_QUOTE_STRING
 	| ANY
 	| PARAM
-	| ~SEMI;
+	| ~SEMI
+;
 
 enableOrDisable: ( K_ENABLE | K_DISABLE);
 
@@ -1931,6 +1952,7 @@ charTypes: ( K_LONG K_VARCHAR) | K_CHAR | K_VARCHAR;
 
 dateTypes:
 	(K_TIME K_WITH K_TIMEZONE)
+	| K_TIMESTAMPTZ
 	| K_DATE
 	| K_TIME
 	| K_SMALLDATETIME

@@ -1,8 +1,5 @@
 lexer grammar VSqlLexer;
 
-@header {
-  package org.antlr4.vsql;
-}
 
 //Keywords
 K_ALL : A L L    ;
@@ -736,18 +733,18 @@ CLOSE_HINT: '*/';
 
 // Identifiers
 
-DOUBLE_QUOTE_STRING: '"' ~'"'* '"';
+DOUBLE_QUOTE_STRING: E? '"' ( '\\'. | '""' | ~('"'| '\\') )* '"';
 
 PARAM: ':' [\p{Alnum}\p{General_Category=Other_Letter}_]+;
 
 WORD:
-	[\p{Alpha}\p{General_Category=Other_Letter}_] [\p{Alnum}\p{General_Category=Other_Letter}_]*;
+	[\p{Alpha}\p{General_Category=Other_Letter}_] [\p{Alnum}\p{General_Category=Other_Letter}_:]*;
 
-SINGLE_QUOTE_STRING: '\'' ( ~'\'' | '\'\'')* '\'';
+SINGLE_QUOTE_STRING: E? '\'' ('\\'. | '\'\'' | ~('\'' | '\\'))* '\'';
 
-FLOAT: DEC_DOT_DEC;
-REAL: ( DECIMAL | DEC_DOT_DEC) ( 'E' [+-]? DEC_DIGIT+);
-DECIMAL: DEC_DIGIT+;
+FLOAT: [+-]? DEC_DOT_DEC;
+REAL: [+-]? ( DECIMAL | DEC_DOT_DEC) ( 'E' [+-]? DEC_DIGIT+);
+DECIMAL: [+-]? DEC_DIGIT+;
 ANY: .;
 fragment IPV6_OCTECT: HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
 
