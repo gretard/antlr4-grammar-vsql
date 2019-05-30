@@ -4,13 +4,13 @@ options {
 	tokenVocab = VSqlLexer;
 }
 
-root: ( statement? SEMI)* EOF?;
+root: ( sqlStatement? SEMI)* EOF?;
+
+sqlStatement:
+	(OPEN_PAREN sqlStatement CLOSE_PAREN)
+	| statement;
 
 statement:
-	(OPEN_PAREN statement CLOSE_PAREN)
-	| statementInParens;
-
-statementInParens:
 	(
 		alter_access_policy_statement
 		| alter_authentication_statement
@@ -1003,17 +1003,17 @@ activate_directed_query_statement:
 create_directed_query_statement:
 	K_CREATE K_DIRECTED K_QUERY (K_OPT | K_OPTIMIZER | K_CUSTOM) id (
 		K_COMMENT string
-	)? statement;
+	)? sqlStatement;
 
 deactivate_directed_query_statement:
-	K_DEACTIVATE K_DIRECTED K_QUERY (id | statement);
+	K_DEACTIVATE K_DIRECTED K_QUERY (id | sqlStatement);
 
 drop_directed_query_statement: K_DROP K_DIRECTED K_QUERY id;
 
 get_directed_query_statement:
-	K_GET K_DIRECTED K_QUERY statement;
+	K_GET K_DIRECTED K_QUERY sqlStatement;
 
-save_query: K_SAVE K_QUERY statement;
+save_query: K_SAVE K_QUERY sqlStatement;
 
 disconnect_statement: K_DISCONNECT dbname;
 
@@ -1126,7 +1126,7 @@ drop_view_statement:
 end_statement: K_END ( K_WORK | K_TRANSACTION)?;
 
 explain_statement:
-	K_EXPLAIN hints? (K_LOCAL | K_VERBOSE | K_JSON | K_ANNOTATED)? statement;
+	K_EXPLAIN hints? (K_LOCAL | K_VERBOSE | K_JSON | K_ANNOTATED)? sqlStatement;
 
 export_to_parquet_statement:
 	K_EXPORT K_TO K_PARQUET OPEN_PAREN K_DIRECTORY EQUAL path (
@@ -1293,7 +1293,7 @@ matchingClause:
 			values CLOSE_PAREN
 	);
 
-profile_statement: K_PROFILE statement;
+profile_statement: K_PROFILE sqlStatement;
 
 release_savepoint_statement: K_RELEASE (K_SAVEPOINT)? id;
 

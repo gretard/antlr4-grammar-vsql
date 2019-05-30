@@ -23,9 +23,11 @@
 				<artifactId>antlr4-maven-plugin</artifactId>
 				<version>4.7.2</version>
 				<configuration>
+					<outputDirectory>target/generated-sources/org/antlr4/vsql</outputDirectory><arguments>
+					 <argument>-package</argument>
+					<argument>org.antlr4.vsql</argument>
+					</arguments>
 					
-					
-					<outputDirectory>target/generated-sources/org/antlr4/vsql</outputDirectory>
 				</configuration>
 				<executions>
 					<execution>
@@ -93,35 +95,25 @@
 			<artifactId>antlr4-runtime</artifactId>
 			<version>4.7.2</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-dbcp2</artifactId>
-			<version>2.0</version>
-		</dependency>
+	
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.5</version>
+			<version>2.6</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<version> 4.13-beta-3</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>2.9.0</version>
-			<scope>test</scope>
-		</dependency>
+
 
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
+			<version>1.2.17</version>
 		</dependency>
 	</dependencies>
 </project>
