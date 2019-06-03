@@ -353,7 +353,7 @@ notifier_params
 		K_NO? K_CHECK K_COMMITTED
 	)
 	| enableOrDisable
-	|
+	
 	(
 		K_IDENTIFIED K_BY value
 	)
@@ -713,7 +713,7 @@ alter_table_item
 	)
 	|
 	(
-		K_ALTER K_CONSTRAINT constraint enableOrDisable
+		K_ALTER K_CONSTRAINT constraint enabledOrDisabled
 	)
 	|
 	(
@@ -2173,7 +2173,7 @@ grouped_clause
 create_table_like_statement
 :
 	K_CREATE K_TABLE ifNotExistsClause? tableReference K_LIKE tableReference
-	schema_privileges_clause? load_method? schema_privileges_clause??
+	((K_INCLUDING | K_EXCLUDING) K_PROJECTIONS)? load_method? schema_privileges_clause??
 ;
 
 create_table_default_statement
@@ -2193,7 +2193,7 @@ table_constraint
 	K_CONSTRAINT constraint
 	(
 		(
-			K_PRIMARY K_KEY columns enableOrDisable?
+			K_PRIMARY K_KEY columns enabledOrDisabled?
 		)
 		|
 		(
@@ -2206,11 +2206,11 @@ table_constraint
 		)
 		|
 		(
-			K_UNIQUE columns enableOrDisable?
+			K_UNIQUE columns enabledOrDisabled?
 		)
 		|
 		(
-			K_CHECK OPEN_PAREN expression CLOSE_PAREN enableOrDisable?
+			K_CHECK OPEN_PAREN expression CLOSE_PAREN enabledOrDisabled?
 		)
 	)
 ;
@@ -2251,7 +2251,7 @@ column_constraint
 	)
 	|
 	(
-		K_CHECK OPEN_PAREN expression CLOSE_PAREN enableOrDisable?
+		K_CHECK OPEN_PAREN expression CLOSE_PAREN enabledOrDisabled?
 	)
 	|
 	(
@@ -2274,7 +2274,7 @@ column_constraint
 	|
 	(
 		(
-			K_PRIMARY K_KEY enableOrDisable?
+			K_PRIMARY K_KEY enabledOrDisabled?
 		)
 		|
 		(
@@ -2283,7 +2283,7 @@ column_constraint
 	)
 	|
 	(
-		K_UNIQUE enableOrDisable?
+		K_UNIQUE enabledOrDisabled?
 	)
 	|
 	(
@@ -4036,13 +4036,22 @@ orderbyItem
 
 predicates
 :
-	predicate
+	(OPEN_PAREN predicates CLOSE_PAREN) |
+
+(
+	
+	(predicate  | expression)
+
 	(
-		(
-			K_AND
-			| K_OR
-		) predicate
-	)*
+	
+	(
+		K_AND
+	| K_OR
+	) predicates)*
+	
+	)
+	
+
 ;
 
 tableSample
@@ -4122,6 +4131,7 @@ expression
 	(
 		OPEN_PAREN
 		(
+
 			expression
 			(
 				operator expression
@@ -4131,7 +4141,9 @@ expression
 	|
 	(
 		(
-			number
+
+			| arrayExpr
+			| number
 			| functionCall
 			| columnReference
 			| caseExp
@@ -4143,6 +4155,8 @@ expression
 		)* castExpr?
 	)
 ;
+
+arrayExpr:  K_ARRAY OPEN_SQUARE_BRACKET (expression (COMMA expression)*)? CLOSE_SQUARE_BRACKET	 ;
 
 predicate
 :
@@ -4226,9 +4240,9 @@ booleanPredicate
 
 caseExp
 :
-	K_CASE K_WHEN expression K_THEN expression
+	K_CASE K_WHEN predicates K_THEN expression
 	(
-		K_WHEN expression K_THEN expression
+		K_WHEN predicates K_THEN expression
 	)*
 	(
 		K_ELSE expression
@@ -4803,7 +4817,7 @@ id
 	| WORD
 	| K_DEFAULT
 	| PARAM
-	| ~SEMI
+	| ~(SEMI | K_WHERE)
 ;
 
 value
@@ -4816,17 +4830,24 @@ value
 	| SINGLE_QUOTE_STRING
 	| ANY
 	| PARAM
-	| ~SEMI
+	| ~(SEMI | K_WHERE)
 ;
 
 enableOrDisable
 :
-	(
+	
 		K_ENABLE
 		| K_DISABLE
-	)
+	
 ;
 
+enabledOrDisabled
+:
+	
+		K_ENABLED
+		| K_DISABLED
+	
+;
 nullOrNotNull
 :
 	K_NOT? K_NULL
