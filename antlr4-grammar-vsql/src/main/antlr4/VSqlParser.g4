@@ -1198,7 +1198,7 @@ copy_statement_option
 	|
 	(
 		(
-			K_ESCAPE K_AS string
+			K_ESCAPE K_AS? string
 		)
 		|
 		(

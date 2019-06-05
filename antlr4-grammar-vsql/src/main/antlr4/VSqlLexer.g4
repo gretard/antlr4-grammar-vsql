@@ -3500,7 +3500,8 @@ DOUBLE_QUOTE_STRING
 
 PARAM
 :
-	':' [\p{Alnum}\p{General_Category=Other_Letter}_]+
+	':' [\p{Alpha}\p{General_Category=Other_Letter}_]
+	[\p{Alnum}\p{General_Category=Other_Letter}_:]*
 ;
 
 WORD
