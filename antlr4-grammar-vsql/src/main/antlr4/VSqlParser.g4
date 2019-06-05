@@ -653,15 +653,15 @@ alter_table_item
 			(
 				(
 					K_CONSTRAINT id?
-					(
-						nullOrNotNull
-					)?
-				)
-				|
+					
+				)?
+				
+				nullOrNotNull?
+				
 				(
 					K_DEFAULT expression
-				)
-			)? encoding_clause?
+				)?
+			) encoding_clause?
 			(
 				K_PROJECTIONS OPEN_PAREN projectionReference
 				(
@@ -876,7 +876,7 @@ user_params
 		)
 		|
 		(
-			K_RESOURCE K_POOL string
+			K_RESOURCE K_POOL resourcePool
 		)
 		|
 		(
@@ -1120,9 +1120,9 @@ column_option
 path
 :
 	(
-		string
+		id
 		(
-			COMMA string
+			COMMA id
 		)*
 		(
 			K_ON
@@ -1149,7 +1149,7 @@ local_path
 	K_LOCAL
 	(
 		K_STDIN
-		| string
+		| id
 	) inputFormat?
 ;
 
@@ -1170,15 +1170,15 @@ vertica_source
 udl_clause
 :
 	(
-		K_SOURCE sourceReference commaSeparatedKeyValuePairs?
+		K_SOURCE sourceReference OPEN_PAREN commaSeparatedKeyValuePairs? CLOSE_PAREN
 	)
 	|
 	(
-		K_FILTER filterReference commaSeparatedKeyValuePairs?
+		K_FILTER filterReference OPEN_PAREN commaSeparatedKeyValuePairs? CLOSE_PAREN
 	)
 	|
 	(
-		K_PARSER parserReference commaSeparatedKeyValuePairs?
+		K_PARSER parserReference OPEN_PAREN commaSeparatedKeyValuePairs? CLOSE_PAREN
 	)
 ;
 
@@ -1320,9 +1320,11 @@ copy_statement
 			| tableReference
 		)
 	)?
-	(
-		K_WITH? udl_clause+
-	)? copy_statement_option*
+	
+	
+		(K_WITH udl_clause+)?
+
+	 copy_statement_option*
 ;
 
 copy_local_statement
