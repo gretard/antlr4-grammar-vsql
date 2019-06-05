@@ -707,7 +707,7 @@ alter_table_item
 			)
 			|
 			(
-				K_SET K_DATATYPE dataTypes
+				K_SET K_DATA K_TYPE dataTypes
 			)
 		)
 	)
