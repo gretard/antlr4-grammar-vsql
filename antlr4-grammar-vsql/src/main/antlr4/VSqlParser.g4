@@ -2751,13 +2751,13 @@ grant_statements_statement
 	| grant_on_model_statement
 	| grant_on_procedure_statement
 	| grant_on_resourcepool_statement
-	| grant_on_role_statement
 	| grant_on_schema_statement
 	| grant_on_sequence_statement
 	| grant_on_location_statement
 	| grant_on_table_statement
 	| grant_on_ude_statement
 	| grant_on_view_statement
+	| grant_on_role_statement
 ;
 
 grant_on_view_statement
@@ -2834,7 +2834,7 @@ grant_on_table_statement
 	) K_ON
 	(
 		(
-			K_TABLE tableReference
+			K_TABLE? tableReference
 			(
 				COMMA tableReference
 			)*
@@ -2925,6 +2925,7 @@ schema_privilege
 	K_USAGE
 	| K_CREATE
 	| K_SELECT
+	| K_UPDATE
 	| K_INSERT
 	| K_DELETE
 	| K_REFERENCES
@@ -4714,8 +4715,10 @@ function
 :
 	K_HASH
 	| K_ROLLUP
+	| K_ANY
 	| id
 ;
+
 
 param
 :
