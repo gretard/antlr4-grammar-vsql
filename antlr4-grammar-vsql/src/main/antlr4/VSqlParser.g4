@@ -1322,7 +1322,7 @@ copy_statement
 	)?
 	
 	
-		(K_WITH udl_clause+)?
+		(K_WITH? udl_clause+)?
 
 	 copy_statement_option*
 ;
