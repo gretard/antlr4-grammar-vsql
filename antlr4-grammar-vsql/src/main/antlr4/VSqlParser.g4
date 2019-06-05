@@ -1949,7 +1949,7 @@ ifNotExistsClause
 
 create_projection_statement
 :
-	K_CREATE K_PROJECTION ifNotExistsClause? projectionReference
+	K_CREATE K_PROJECTION ifNotExistsClause? projectionReference hints?
 	(
 		OPEN_PAREN projection_clause_item
 		(
@@ -3057,7 +3057,8 @@ insert_statement
 		(
 			K_VALUES OPEN_PAREN expressions CLOSE_PAREN
 		)
-		| select_statement
+		| with_statement
+		| select_statement 
 	)
 ;
 
@@ -3486,12 +3487,12 @@ at_epoch_clause
 		)
 	)
 ;
-
 select_statement
 :
 	(
 		OPEN_PAREN select_statement CLOSE_PAREN
 	)
+
 	|
 	(
 		at_epoch_clause? select_query
@@ -4064,11 +4065,20 @@ tableSample
 
 dataset
 :
+	((
+	OPEN_PAREN (
+		tableReference
+		| select_clause
+		| joinedTable
+	) CLOSE_PAREN 
+	)
+	|
 	(
 		tableReference
 		| select_clause
 		| joinedTable
-	) alias?
+	) ) 
+	alias?
 ;
 
 joinedTable
@@ -4144,10 +4154,9 @@ expression
 	|
 	(
 		(
-
+			| functionCall
 			| arrayExpr
 			| number
-			| functionCall
 			| columnReference
 			| caseExp
 			| select_query
@@ -4261,7 +4270,7 @@ alias
 
 functionCall
 :
-	function OPEN_PAREN
+	functionReference OPEN_PAREN
 	(
 		(
 			K_ALL
@@ -4285,7 +4294,7 @@ elementWithUsing
 usingClause
 :
 	(
-		K_USING K_PARAMETERS commaSeparatedKeyValuePairs
+		K_USING K_PARAMETERS? (K_OCTETS | K_CHARACTERS | commaSeparatedKeyValuePairs)
 	)
 ;
 
@@ -4413,7 +4422,7 @@ hint
 		K_IGNORECONST OPEN_PAREN integerNumber CLOSE_PAREN
 	)
 	| K_VERBATIM
-;
+	;
 
 columnReference
 :
@@ -4822,6 +4831,7 @@ id
 	| WORD
 	| K_DEFAULT
 	| PARAM
+	| ANY
 	| ~(SEMI | K_WHERE)
 ;
 
