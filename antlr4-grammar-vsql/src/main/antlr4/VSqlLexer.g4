@@ -3242,6 +3242,11 @@ K_EARLY_MATERIALIZATION
 	E A R L Y UNDERSCORE M A T E R I A L I Z A T I O N
 ;
 
+K_CREATETYPE
+:
+	C R E A T E T Y P E
+;
+
 K_SYNTACTIC_JOIN
 :
 	S Y N T A C T I C UNDERSCORE J O I N
@@ -3345,11 +3350,6 @@ UNDERSCORE
 ;
 // operator tokens
 
-AMP
-:
-	'&'
-;
-
 AMP_AMP
 :
 	'&&'
@@ -3365,6 +3365,11 @@ BANG
 	'!'
 ;
 
+ABS
+:
+	'@'
+;
+
 BANG_BANG
 :
 	'!!'
@@ -3378,11 +3383,6 @@ BANG_EQUAL
 EQUAL
 :
 	'='
-;
-
-EQUAL_GT
-:
-	'=>'
 ;
 
 EQUAL2
@@ -3415,6 +3415,31 @@ LT_GT
 	'<>'
 ;
 
+SQROOT
+:
+	'|/'
+;
+
+CUBEROOT
+:
+	'||/'
+;
+
+EXP
+:
+	'^'
+;
+
+MOD
+:
+	'%'
+;
+
+DIV2
+:
+	'//'
+;
+
 DIV
 :
 	'/'
@@ -3424,12 +3449,49 @@ DPIPE
 :
 	'||'
 ;
-OPEN_SQUARE_BRACKET:
+
+OPEN_SQUARE_BRACKET
+:
 	'['
 ;
-CLOSE_SQUARE_BRACKET:
+
+CLOSE_SQUARE_BRACKET
+:
 	']'
 ;
+// bitwise operators
+
+O_AND
+:
+	'&'
+;
+
+O_OR
+:
+	'|'
+;
+
+O_XOR
+:
+	'#'
+;
+
+O_NOT
+:
+	'~'
+;
+
+O_SHIFT_LEFT
+:
+	'<<'
+;
+
+O_SHIFT_RIGHT
+:
+	'>>'
+;
+// boolean operators:
+
 //other
 
 IPV4_ADDR
