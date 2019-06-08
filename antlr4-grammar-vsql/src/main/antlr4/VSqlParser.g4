@@ -8,7 +8,10 @@ root
 :
 	(
 		sqlStatement? SEMI
-	)* EOF?
+	)*
+	(
+		sqlStatement SEMI?
+	)? EOF?
 ;
 
 sqlStatement
@@ -353,7 +356,6 @@ notifier_params
 		K_NO? K_CHECK K_COMMITTED
 	)
 	| enableOrDisable
-	
 	(
 		K_IDENTIFIED K_BY value
 	)
@@ -653,11 +655,7 @@ alter_table_item
 			(
 				(
 					K_CONSTRAINT id?
-					
-				)?
-				
-				nullOrNotNull?
-				
+				)? nullOrNotNull?
 				(
 					K_DEFAULT expression
 				)?
@@ -1320,11 +1318,9 @@ copy_statement
 			| tableReference
 		)
 	)?
-	
-	
-		(K_WITH? udl_clause+)?
-
-	 copy_statement_option*
+	(
+		K_WITH? udl_clause+
+	)? copy_statement_option*
 ;
 
 copy_local_statement
@@ -2175,7 +2171,12 @@ grouped_clause
 create_table_like_statement
 :
 	K_CREATE K_TABLE ifNotExistsClause? tableReference K_LIKE tableReference
-	((K_INCLUDING | K_EXCLUDING) K_PROJECTIONS)? load_method? schema_privileges_clause??
+	(
+		(
+			K_INCLUDING
+			| K_EXCLUDING
+		) K_PROJECTIONS
+	)? load_method? schema_privileges_clause??
 ;
 
 create_table_default_statement
@@ -3048,7 +3049,15 @@ grant_authentication_statement
 
 insert_statement
 :
-	K_INSERT hints? K_INTO tableReference columns?
+	K_INSERT hints? K_INTO tableReference columns? insert_values
+;
+
+insert_values
+:
+	(
+		OPEN_PAREN insert_values CLOSE_PAREN
+	)
+	|
 	(
 		(
 			K_DEFAULT K_VALUES
@@ -3058,7 +3067,7 @@ insert_statement
 			K_VALUES OPEN_PAREN expressions CLOSE_PAREN
 		)
 		| with_statement
-		| select_statement 
+		| select_statement
 	)
 ;
 
@@ -3487,12 +3496,12 @@ at_epoch_clause
 		)
 	)
 ;
+
 select_statement
 :
 	(
 		OPEN_PAREN select_statement CLOSE_PAREN
 	)
-
 	|
 	(
 		at_epoch_clause? select_query
@@ -4040,22 +4049,23 @@ orderbyItem
 
 predicates
 :
-	(OPEN_PAREN predicates CLOSE_PAREN) |
-
-(
-	
-	(predicate  | expression)
-
 	(
-	
-	(
-		K_AND
-	| K_OR
-	) predicates)*
-	
+		OPEN_PAREN predicates CLOSE_PAREN
 	)
-	
-
+	|
+	(
+		(
+			predicate
+			| expression
+		)
+		(
+			(
+				K_AND
+				| K_OR
+				| K_NOT
+			) predicates
+		)*
+	)
 ;
 
 tableSample
@@ -4065,25 +4075,21 @@ tableSample
 
 dataset
 :
-	((
-	OPEN_PAREN (
-		tableReference
-		| select_clause
-		| joinedTable
-	) CLOSE_PAREN 
+	(
+		OPEN_PAREN dataset CLOSE_PAREN alias?
 	)
 	|
 	(
-		tableReference
-		| select_clause
-		| joinedTable
-	) ) 
-	alias?
+		(
+			select_statement
+			| joinedTable
+			| tableReference
+		) alias?
+	)
 ;
 
 joinedTable
 :
-	tableReference
 	(
 		K_INNER
 		|
@@ -4100,7 +4106,7 @@ joinedTable
 		)
 		| K_NATURAL
 		| K_CROSS
-	)? K_JOIN hints? tableSample? joinPredicate?
+	)? K_JOIN tableReference alias? hints? tableSample? joinPredicate?
 ;
 
 elements
@@ -4114,11 +4120,16 @@ elements
 element
 :
 	(
+		asteriskExp
+		|
 		(
 			expression alias?
 		)
-		| asteriskExp
 	)
+;
+
+el
+:
 ;
 
 expressions
@@ -4139,21 +4150,29 @@ castExpr
 	DCOLON dataTypes
 ;
 
+castOperator
+:
+	(
+		K_CAST OPEN_PAREN expression K_AS dataTypes CLOSE_PAREN
+	)
+	|
+	(
+		dataTypes string
+	)
+;
+
 expression
 :
 	(
 		OPEN_PAREN
 		(
-
 			expression
-			(
-				operator expression
-			)*
 		) CLOSE_PAREN castExpr?
 	)
 	|
 	(
 		(
+			castOperator
 			| functionCall
 			| arrayExpr
 			| number
@@ -4161,14 +4180,23 @@ expression
 			| caseExp
 			| select_query
 			| value
-		)
+		) castExpr?
 		(
 			operator expression
-		)* castExpr?
+		)*
 	)
 ;
 
-arrayExpr:  K_ARRAY OPEN_SQUARE_BRACKET (expression (COMMA expression)*)? CLOSE_SQUARE_BRACKET	 ;
+arrayExpr
+:
+	K_ARRAY OPEN_SQUARE_BRACKET
+	(
+		expression
+		(
+			COMMA expression
+		)*
+	)? CLOSE_SQUARE_BRACKET
+;
 
 predicate
 :
@@ -4202,13 +4230,13 @@ likePredicate
 
 joinPredicate
 :
-	K_ON columnReference comparisonOperator expression
+	K_ON expression
 	(
 		(
 			K_AND
 			| K_OR
 			| K_NOT
-		) columnReference comparisonOperator expression
+		) expression
 	)*
 ;
 
@@ -4294,7 +4322,12 @@ elementWithUsing
 usingClause
 :
 	(
-		K_USING K_PARAMETERS? (K_OCTETS | K_CHARACTERS | commaSeparatedKeyValuePairs)
+		K_USING K_PARAMETERS?
+		(
+			K_OCTETS
+			| K_CHARACTERS
+			| commaSeparatedKeyValuePairs
+		)
 	)
 ;
 
@@ -4363,6 +4396,10 @@ hint
 	(
 		K_ENABLE_WITH_CLAUSE_MATERIALIZATION
 	)
+	|
+	(
+		K_CREATETYPE OPEN_PAREN value CLOSE_PAREN
+	)
 	| K_EARLY_MATERIALIZATION
 	| K_DIRECT
 	|
@@ -4422,7 +4459,7 @@ hint
 		K_IGNORECONST OPEN_PAREN integerNumber CLOSE_PAREN
 	)
 	| K_VERBATIM
-	;
+;
 
 columnReference
 :
@@ -4730,7 +4767,6 @@ function
 	| id
 ;
 
-
 param
 :
 	id
@@ -4832,7 +4868,7 @@ id
 	| K_DEFAULT
 	| PARAM
 	| ANY
-	| ~(SEMI | K_WHERE)
+	| ~( SEMI | K_WHERE | K_FROM | K_SELECT )
 ;
 
 value
@@ -4845,24 +4881,21 @@ value
 	| SINGLE_QUOTE_STRING
 	| ANY
 	| PARAM
-	| ~(SEMI | K_WHERE)
+	| ~( SEMI | K_WHERE )
 ;
 
 enableOrDisable
 :
-	
-		K_ENABLE
-		| K_DISABLE
-	
+	K_ENABLE
+	| K_DISABLE
 ;
 
 enabledOrDisabled
 :
-	
-		K_ENABLED
-		| K_DISABLED
-	
+	K_ENABLED
+	| K_DISABLED
 ;
+
 nullOrNotNull
 :
 	K_NOT? K_NULL
@@ -4903,25 +4936,61 @@ password_parameter
 
 operator
 :
-	comparisonOperator
+	otherOperator
+	| comparisonOperator
+	| mathematicalOperator
+	| bitwiseOperator
+	| booleanOperators
+;
+
+bitwiseOperator
+:
+	O_AND
+	| O_OR
+	| O_XOR
+	| O_NOT
+	| O_SHIFT_LEFT
+	| O_SHIFT_RIGHT
+;
+
+booleanOperators
+:
+	K_AND
+	| K_OR
+	| K_NOT
+;
+
+otherOperator
+:
+	DPIPE
+;
+
+mathematicalOperator
+:
+	BANG_BANG
+	| ABS
+	| SQROOT
+	| CUBEROOT
+	| DIV2
+	| EXP
+	| MOD
+	| PLUS
+	| MINUS
+	| DIV
+	| STAR
+	| BANG
 ;
 
 comparisonOperator
 :
 	EQUAL
-	| DPIPE
-	| EQUAL_GT
+	| EQUAL2
 	| GT
-	| LT
-	| PLUS
-	| MINUS
-	| LTE
 	| GTE
+	| LT
+	| LTE
 	| LT_GT
 	| BANG_EQUAL
-	| EQUAL2
-	| DIV
-	| STAR
 ;
 
 isolationLevel
