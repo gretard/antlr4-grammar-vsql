@@ -24,143 +24,141 @@ sqlStatement
 
 statement
 :
-	(
-		alter_access_policy_statement
-		| alter_authentication_statement
-		| alter_database_drop_statement
-		| alter_fault_group_statement
-		| alter_function_statement
-		| alter_hcatalog_schema_statement
-		| alter_library_statement
-		| alter_model_statement
-		| alter_network_interface_statement
-		| alter_node_statement
-		| alter_notfifier_statement
-		| alter_projection_statement
-		| alter_profile_statement
-		| alter_profile_rename_statement
-		| alter_resource_pool_statement
-		| alter_role_rename_statement
-		| alter_schema_statement
-		| alter_sequence_statement
-		| alter_session_statement
-		| alter_subnet_statement
-		| alter_table_rename_statement
-		| alter_table_general_statment
-		| alter_user_statement
-		| alter_view_statement
-		| begin_transaction_statement
-		| comment_on_statement
-		| commit_statement
-		| connect_statement
-		| copy_statement
-		| copy_local_statement
-		| copy_from_vertica_statement
-		| create_access_policy_statement
-		| create_authentication_statement
-		| create_branch_statement
-		| create_external_table_as_copy_statement
-		| create_fault_group_statement
-		| create_flex_table_statement
-		| create_flex_external_table_as_copy_statement
-		| create_function_statements_statement
-		| create_hcatalog_schema_statement
-		| create_library_statement
-		| create_load_balance_group_statement
-		| create_local_temporary_view_statement
-		| create_location_statement
-		| create_network_address_statement
-		| create_network_interface_statement
-		| create_notifier_statement
-		| create_procedure_statement
-		| create_profile_statement
-		| create_projection_statement
-		| create_projection_live_aggregate_projections_statement
-		| create_projection_udtfs_statement
-		| create_resource_pool_statement
-		| create_role_statement
-		| create_routing_rule_statement
-		| create_schema_statement
-		| create_sequence_statement
-		| create_subnet_statement
-		| create_table_statement
-		| create_temporary_table_statement
-		| create_text_index_statement
-		| create_user_statement
-		| create_view_statement
-		| delete_statement
-		| directed_query_statements_statement
-		| disconnect_statement
-		| drop_access_policy_statement
-		| drop_aggregate_function_statement
-		| drop_authentication_statement
-		| drop_branch_statement
-		| drop_fault_group_statement
-		| drop_function_statement
-		| drop_source_statement
-		| drop_filter_statement
-		| drop_parser_statement
-		| drop_model_statement
-		| drop_library_statement
-		| drop_load_balance_group_statement
-		| drop_network_address_statement
-		| drop_network_interface_statement
-		| drop_notifier_statement
-		| drop_procedure_statement
-		| drop_profile_statement
-		| drop_projection_statement
-		| drop_resource_pool_statement
-		| drop_role_statement
-		| drop_routing_rule_statement
-		| drop_schema_statement
-		| drop_sequence_statement
-		| drop_subnet_statement
-		| drop_table_statement
-		| drop_text_index_statement
-		| drop_transform_function_statement
-		| drop_user_statement
-		| drop_view_statement
-		| end_statement
-		| explain_statement
-		| export_to_parquet_statement
-		| export_to_vertica_statement
-		| grant_statements_statement
-		| insert_statement
-		| merge_statement
-		| profile_statement
-		| release_savepoint_statement
-		| revoke_statements_statement
-		| rollback_statement
-		| rollback_to_savepoint_statement
-		| savepoint_statement
-		| with_statement
-		| select_statement
-		| set_datestyle_statement
-		| set_escape_string_warning_statement
-		| set_intervalstyle_statement
-		| set_locale_statement
-		| set_role_statement
-		| set_search_path_statement
-		| set_session_autocommit_statement
-		| set_session_characteristics_as_transaction_statement
-		| set_session_graceperiod_statement
-		| set_session_idlesessiontimeout_statement
-		| set_session_memorycap_statement
-		| set_session_multipleactiveresultsets_statement
-		| set_session_resource_pool_statement
-		| set_session_runtimecap_statement
-		| set_session_tempspacecap_statement
-		| set_standard_conforming_strings_statement
-		| set_time_zone_statement
-		| show_statement
-		| show_current_statement
-		| show_database_statement
-		| show_node_statement
-		| show_session_statement
-		| start_transaction_statement
-		| truncate_table_statement
-		| update_statement
-	)
+	alter_access_policy_statement
+	| alter_authentication_statement
+	| alter_database_drop_statement
+	| alter_fault_group_statement
+	| alter_function_statement
+	| alter_hcatalog_schema_statement
+	| alter_library_statement
+	| alter_model_statement
+	| alter_network_interface_statement
+	| alter_node_statement
+	| alter_notfifier_statement
+	| alter_projection_statement
+	| alter_profile_statement
+	| alter_profile_rename_statement
+	| alter_resource_pool_statement
+	| alter_role_rename_statement
+	| alter_schema_statement
+	| alter_sequence_statement
+	| alter_session_statement
+	| alter_subnet_statement
+	| alter_table_rename_statement
+	| alter_table_general_statment
+	| alter_user_statement
+	| alter_view_statement
+	| begin_transaction_statement
+	| comment_on_statement
+	| commit_statement
+	| connect_statement
+	| copy_statement
+	| copy_local_statement
+	| copy_from_vertica_statement
+	| create_access_policy_statement
+	| create_authentication_statement
+	| create_branch_statement
+	| create_external_table_as_copy_statement
+	| create_fault_group_statement
+	| create_flex_table_statement
+	| create_flex_external_table_as_copy_statement
+	| create_function_statements_statement
+	| create_hcatalog_schema_statement
+	| create_library_statement
+	| create_load_balance_group_statement
+	| create_local_temporary_view_statement
+	| create_location_statement
+	| create_network_address_statement
+	| create_network_interface_statement
+	| create_notifier_statement
+	| create_procedure_statement
+	| create_profile_statement
+	| create_projection_statement
+	| create_projection_live_aggregate_projections_statement
+	| create_projection_udtfs_statement
+	| create_resource_pool_statement
+	| create_role_statement
+	| create_routing_rule_statement
+	| create_schema_statement
+	| create_sequence_statement
+	| create_subnet_statement
+	| create_table_statement
+	| create_temporary_table_statement
+	| create_text_index_statement
+	| create_user_statement
+	| create_view_statement
+	| delete_statement
+	| directed_query_statements_statement
+	| disconnect_statement
+	| drop_access_policy_statement
+	| drop_aggregate_function_statement
+	| drop_authentication_statement
+	| drop_branch_statement
+	| drop_fault_group_statement
+	| drop_function_statement
+	| drop_source_statement
+	| drop_filter_statement
+	| drop_parser_statement
+	| drop_model_statement
+	| drop_library_statement
+	| drop_load_balance_group_statement
+	| drop_network_address_statement
+	| drop_network_interface_statement
+	| drop_notifier_statement
+	| drop_procedure_statement
+	| drop_profile_statement
+	| drop_projection_statement
+	| drop_resource_pool_statement
+	| drop_role_statement
+	| drop_routing_rule_statement
+	| drop_schema_statement
+	| drop_sequence_statement
+	| drop_subnet_statement
+	| drop_table_statement
+	| drop_text_index_statement
+	| drop_transform_function_statement
+	| drop_user_statement
+	| drop_view_statement
+	| end_statement
+	| explain_statement
+	| export_to_parquet_statement
+	| export_to_vertica_statement
+	| grant_statements_statement
+	| insert_statement
+	| merge_statement
+	| profile_statement
+	| release_savepoint_statement
+	| revoke_statements_statement
+	| rollback_statement
+	| rollback_to_savepoint_statement
+	| savepoint_statement
+	| with_statement
+	| select_statement
+	| set_datestyle_statement
+	| set_escape_string_warning_statement
+	| set_intervalstyle_statement
+	| set_locale_statement
+	| set_role_statement
+	| set_search_path_statement
+	| set_session_autocommit_statement
+	| set_session_characteristics_as_transaction_statement
+	| set_session_graceperiod_statement
+	| set_session_idlesessiontimeout_statement
+	| set_session_memorycap_statement
+	| set_session_multipleactiveresultsets_statement
+	| set_session_resource_pool_statement
+	| set_session_runtimecap_statement
+	| set_session_tempspacecap_statement
+	| set_standard_conforming_strings_statement
+	| set_time_zone_statement
+	| show_statement
+	| show_current_statement
+	| show_database_statement
+	| show_node_statement
+	| show_session_statement
+	| start_transaction_statement
+	| truncate_table_statement
+	| update_statement
 ;
 
 alter_access_policy_statement
@@ -4055,8 +4053,9 @@ predicates
 	|
 	(
 		(
-			predicate
-			| expression
+			expression
+			| predicate
+		
 		)
 		(
 			(
@@ -4868,7 +4867,7 @@ id
 	| K_DEFAULT
 	| PARAM
 	| ANY
-	| ~( SEMI | K_WHERE | K_FROM | K_SELECT )
+	//| ~( SEMI | K_WHERE | K_FROM | K_SELECT | K_ORDER | K_GROUP | K_PARTITION | K_OVER)
 ;
 
 value
@@ -4881,7 +4880,7 @@ value
 	| SINGLE_QUOTE_STRING
 	| ANY
 	| PARAM
-	| ~( SEMI | K_WHERE )
+	//| ~( SEMI | K_WHERE | K_FROM | K_SELECT | K_ORDER | K_GROUP | K_PARTITION | K_OVER)
 ;
 
 enableOrDisable

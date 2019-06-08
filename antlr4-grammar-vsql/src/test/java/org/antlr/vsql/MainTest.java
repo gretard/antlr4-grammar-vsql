@@ -3,6 +3,7 @@ package org.antlr.vsql;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
@@ -51,6 +52,7 @@ public class MainTest {
 
     @Test
     public void testExamples() throws IOException {
+    	AtomicInteger errors = new AtomicInteger();
         for (File f : new File("./examples").listFiles()) {
         	if (f.getName().contains("_skip")) {
         		continue;
@@ -64,11 +66,13 @@ public class MainTest {
                 public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
                         int charPositionInLine, String msg, RecognitionException e) throws RecognitionException {
                     System.out.println("ERROR " + msg+" "+line);
+                    errors.incrementAndGet();
                 }
             });
             ParseTree root = parser.root();
-            print(root, 0, stream);
+         //   print(root, 0, stream);
         }
+        System.out.println("Total: "+errors.get());
     }
 
     public static void print(final ParseTree node, final int level, CommonTokenStream stream) {
