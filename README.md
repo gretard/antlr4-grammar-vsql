@@ -1,4 +1,4 @@
-# antlr4-grammar-vsql
+# ANTLR v4 grammar for vsql (Vertica SQL)
 
 ANTLR v4 grammar for vsql (Vertica SQL)
 
