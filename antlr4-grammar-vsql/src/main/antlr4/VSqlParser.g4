@@ -984,7 +984,7 @@ comment_on_transform_function_statement
 
 comment_on_library_statement
 :
-	K_COMMENT K_ON K_FUNCTION libraryReference comment_value
+	K_COMMENT K_ON K_LIBRARY libraryReference comment_value
 ;
 
 comment_on_node_statement
